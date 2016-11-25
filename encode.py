@@ -110,14 +110,16 @@ class problem:
                 for param in line.split()[1:]: #Consider splitting by ')' in case there are spaces in between arguments
                     this_relation = Atom(param);
                     
+                    #Introduce newly found variables in self.Variables
                     for va in this_relation.Variables:
                         if(not va in self.Variables):
                             self.Variables.append(va);
                     
+                    #Introduce newly found relation in self.Relations
                     aux = self.Relations.setdefault(this_relation.Name, Relation());
                     
                     if(aux.Num_of_vars != -1 and aux.Num_of_vars != len(this_relation.Variables)):
-                        raise(ValueError('Number of variables used by a relation shouldn\'t change')); #Or should it?
+                        raise(ValueError('Number of variables used by a relation shouldn\'t change')); 
                     aux.Num_of_vars = len(this_relation.Variables);
                     
                     if(line[0] == 'I'):
@@ -197,7 +199,7 @@ class problem:
         S+='Number of actions  : %d\n'%self.N_acts;
         S+='Number of arguments: %d\n'%self.N_args;
         S+='Initial State: %s\n'%self.InitialState;
-        S+='Initial Goal : %s\n'%self.GoalState;
+        S+='Goal State   : %s\n'%self.GoalState;
         
         if(self.h>=0):
             S+='Total number of literals for h=%d: %d\n'%(self.h, self.N_rels*(self.h+1)+(self.N_acts+self.N_args*self.N_vars)*self.h);
