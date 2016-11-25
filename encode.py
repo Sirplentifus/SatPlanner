@@ -16,10 +16,10 @@ class Relation: #Information about a relation in the general sense
 
 class Action: #Information about an action in the general sense
     def __init__(self, Variables=None):
-        self.Num_of_vars = 0;
+        self.Num_of_args = 0;
         self.Vars = []; #Variables present in definition (used to convert variables to numbers)
         
-        #Lists of atoms, with variables that are numbers going from 0 to Num_of_vars-1:
+        #Lists of atoms, with variables that are numbers going from 0 to Num_of_args-1:
         self.Precond = [];
         self.Effects = [];
         
@@ -27,7 +27,7 @@ class Action: #Information about an action in the general sense
         
         if(Variables != None):
             self.Vars = Variables;
-            self.Num_of_vars = len(Variables);
+            self.Num_of_args = len(Variables);
         
     def append(self, new_atom, whichset):
         
@@ -53,13 +53,12 @@ class Action: #Information about an action in the general sense
             raise(ValueError('Invalid whichset'));
         
     def __repr__(self):
-        return '\tNum_of_Vars: %d\n\tPreconditions: %s\n\tEffects: %s\n\tInd: %d'%(self.Num_of_vars, self.Precond, self.Effects, self.Ind);
+        return '\tNum_of_args: %d\n\tPreconditions: %s\n\tEffects: %s\n\tInd: %d'%(self.Num_of_args, self.Precond, self.Effects, self.Ind);
         
 class Atom: #Represents a specific relation or action
     def __init__(self, string):
         self.Name = '';
         self.Variables = [];
-        self.t = -1; #Time step
         self.affirm = None; #True if affirmed, False if negated
         
         if(not string):
@@ -84,22 +83,27 @@ class Atom: #Represents a specific relation or action
         else:
             S = '-';
         S += '%s%s'%(self.Name, self.Variables);
-        if(self.t != -1):
-            S+='_%d'%self.t;
         return S;
 #Although there are issues with using this as an action if RAA encoding is to be used...
     
 class problem:
+    Variables = [];
+    #The order in a dict varies. Using OrderedDict instead:
+    Relations = OrderedDict(); 
+    Actions = OrderedDict();
+
+    #States in the form of lists of atoms
+    InitialState = []; 
+    GoalState = [];
+    
+    #Various useful counts:
+    N_vars = 0;
+    N_rels = 0;
+    N_acts = 0;
+    N_args = 0;
+    N_lits_t=0; #literals per time step (less than horizon)
     
     def __init__(self, fileHandle=None):
-        self.Variables = [];
-        #The order in a dict varies. Using OrderedDict instead:
-        self.Relations = OrderedDict(); 
-        self.Actions = OrderedDict();
-        
-        #States in the form of lists of atoms
-        self.InitialState = []; 
-        self.GoalState = [];
         
         if(fileHandle == None):
             return;
@@ -151,39 +155,103 @@ class problem:
                             self.Variables.append(va);
         
         self.N_vars = len(self.Variables);
-        self.N_rels = 0;
         for rel in self.Relations:
             self.Relations[rel].Start_Ind = self.N_rels;
             self.N_rels += self.N_vars**self.Relations[rel].Num_of_vars;
-        self.N_acts = 0;
-        self.N_args = 0;
+        
         for act in self.Actions:
-            self.N_args = max(self.N_args, self.Actions[act].Num_of_vars);
+            self.N_args = max(self.N_args, self.Actions[act].Num_of_args);
             self.Actions[act].Ind = self.N_rels + self.N_acts;
             self.N_acts+=1;
+        self.N_lits_t = self.N_rels+self.N_acts+self.N_args*self.N_vars;
+        
+        #Precalculating sentences:
+        self.init_statements();
+        
+    def init_statements(self):
+        #At init all possible lits are negated, except if they're 
+        #present in self.InitialState
+        Lits = [Literal(i, False) for i in list(range(self.N_rels))];
+        for atom in self.InitialState:
+            lit = self.Rel2Lit(atom);
+            Lits[lit.ID] = lit;
+        #Putting in clause form
+        self.Init_Statement.Clauses = [[lit] for lit in Lits];
+        
+        #Repeat of the previous, but for Goal state
+        Lits = [Literal(i, False) for i in list(range(self.N_rels))];
+        for atom in self.GoalState:
+            lit = self.Rel2Lit(atom);
+            Lits[lit.ID] = lit;
+        #Putting in clause form
+        self.Goal_Statement.Clauses = [[lit] for lit in Lits];
+        
+        #Producing action statements
+        for act_name in self.Actions:
+            act = self.Actions[act_name];
+            
+            #Combination of arguments seen as a number of base self.N_vars
+            for arg_comb_num in range(self.N_vars**act.Num_of_args):
+                args = [];
+                arg_inds = [];
+                for arg_ordinal in range(act.Num_of_args):
+                    arg_var_ind = self.N_rels + self.N_acts + \
+                      self.N_vars*arg_ordinal + arg_comb_num%self.N_vars;
+                    
+                    arg_inds.append(arg_comb_num%self.N_vars);
+                    args.append(Literal(arg_var_ind, True));
+                    arg_comb_num//=self.N_vars;
+                
+                Base_Clause = [Literal(act.Ind, True)] + args;
+                
+                #Now produce the clauses. One for each precondition and effect
+                for precond in act.Precond:
+                    Precond_Lit = self.Rel2Lit(precond, arg_inds);
+                    This_Clause = Base_Clause + [Precond_Lit];
+                    self.Actions_Statement.Clauses.append(This_Clause);
+                for effect in act.Effects:
+                    Effect_Lit = self.Rel2Lit(effect, arg_inds);
+                    Effect_Lit.ID += self.N_lits_t;
+                    This_Clause = Base_Clause + [Effect_Lit];
+                    self.Actions_Statement.Clauses.append(This_Clause);                    
+                #POSSIBLE IMPROVEMENT: The above code seems to generate 
+                #   equal clauses, which can be excluded, and it also 
+                #   generates clauses with contradicting literals that 
+                #   can get resolved.
     
     def set_horizon(self, h):
         self.h = h;
         for rel in self.GoalState:
             rel.t = h;
+        self.N_lits = self.N_lits_t*self.h + self.N_rels;
             
     #This method translates An_Atom which is a specific relation, and
-    #converts it into the number of variable it is.
-    def Rel2LitInd(self, An_Atom):
+    #converts it into a Literal at t=0.
+    def Rel2Lit(self, An_Atom, arg_inds=None):
         if(len(An_Atom.Variables) != self.Relations[An_Atom.Name].Num_of_vars):
             raise(ValueError('Invalid Atom - Number of variables is incorrect'));
         
         Literal_ID = 0;
         for var in An_Atom.Variables:
-            var_ind = [i for i in range(self.N_vars) if self.Variables[i]==var];
-            if(len(var_ind) != 1):
-                raise(ValueError('Invalid Atom or Problematic Problem - Variables not found or found multiple times'));
+            if(isinstance(var, str)):
+                var_ind = [i for i in range(self.N_vars) if self.Variables[i]==var];
+                if(len(var_ind) != 1):
+                    raise(ValueError('Invalid Atom or Problematic Problem - Variables not found or found multiple times'));
+                var_ind = var_ind[0];
+            elif(isinstance(var, int)):
+                var_ind = arg_inds[var];
+            else:
+                raise(ValueError('Invalid Atom - vars must be either str or int'));
             Literal_ID *= self.N_vars;
-            Literal_ID += var_ind[0];
+            Literal_ID += var_ind;
         
         #   Beggining of time bloc + offset to beggining of relation block
-        Literal_ID += (self.N_rels+self.N_acts+self.N_args*self.N_vars)*An_Atom.t + self.Relations[An_Atom.Name].Start_Ind;
-        return Literal_ID;
+        Literal_ID += self.Relations[An_Atom.Name].Start_Ind;
+        ret = Literal();
+        ret.ID = Literal_ID;
+        ret.Affirm = An_Atom.affirm;
+        
+        return ret;
    
     def __repr__(self):
         S =  '\nVariables: %s\n'%self.Variables;
@@ -198,12 +266,33 @@ class problem:
         S+='Number of relations: %d\n'%self.N_rels;
         S+='Number of actions  : %d\n'%self.N_acts;
         S+='Number of arguments: %d\n'%self.N_args;
+        S+='Numb of Lits per t : %d\n'%self.N_lits_t;
         S+='Initial State: %s\n'%self.InitialState;
         S+='Goal State   : %s\n'%self.GoalState;
         
         if(self.h>=0):
-            S+='Total number of literals for h=%d: %d\n'%(self.h, self.N_rels*(self.h+1)+(self.N_acts+self.N_args*self.N_vars)*self.h);
+            S+='Total number of literals for h=%d: %d\n'%(self.h, self.N_lits);
+        
+        S+='Pre-calculated values for encoding:\n';
+        S+='\tInit_Statement: %s\n'%self.Init_Statement.Clauses;
+        S+='\tGoal_Statement: %s\n'%self.Goal_Statement.Clauses;
+        S+='\tActions_Statement: %s -> %d clauses\n'%(self.Actions_Statement.Clauses, len(self.Actions_Statement.Clauses));
+        
         return S;
+        
+    Init_Statement = SAT_Sentence();
+    
+    #The following sentences also have time_step set to 0. They'll have
+    #to be offset to be put in the right timestep
+    
+    #This one must have t=h
+    Goal_Statement = SAT_Sentence();
+    
+    #These ones must be repeated for t in range(h)
+    Actions_Statement = SAT_Sentence();
+    Frame_Statement = SAT_Sentence();
+    Exclusive_Statement = SAT_Sentence();
+    
 
 
 fh = open(sys.argv[1],'r');    
