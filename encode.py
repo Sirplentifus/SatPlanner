@@ -1,6 +1,5 @@
 import sys;
 import re;
-import pprint;
 import pdb;
 from collections import OrderedDict; 
 import copy;
@@ -102,7 +101,8 @@ class problem:
     N_rels = 0;
     N_acts = 0;
     N_args = 0;
-    N_lits_t=0; #literals per time step (less than horizon)
+    N_lits_t=0; #literals per time step (before horizon)
+    N_lits = 0;
     
     def __init__(self, fileHandle=None):
         
@@ -267,9 +267,29 @@ class problem:
         
     def set_horizon(self, h):
         self.h = h;
-        for rel in self.GoalState:
-            rel.t = h;
         self.N_lits = self.N_lits_t*self.h + self.N_rels;
+        
+        self.Total_Statement.N_Vars = self.N_lits;
+        self.Total_Statement = copy.deepcopy(self.Init_Statement);
+        
+        for Clause in self.Goal_Statement.Clauses:
+            New_Clause = [];
+            for Lit in Clause:
+                new_Lit = copy.copy(Lit);
+                new_Lit.ID += self.N_lits_t*h;
+                New_Clause.append(new_Lit);
+            self.Total_Statement.Clauses.append(New_Clause);
+        
+        Action_Related_Clauses = self.Actions_Statement.Clauses + self.Frame_Statement.Clauses + self.Exclusive_Statement.Clauses;
+        for t in range(h):
+            for Clause in Action_Related_Clauses:
+                New_Clause = [];
+                for Lit in Clause:
+                    new_Lit = copy.copy(Lit);
+                    new_Lit.ID += self.N_lits_t*t;
+                    New_Clause.append(new_Lit);
+                self.Total_Statement.Clauses.append(New_Clause);
+            
             
     #This method translates An_Atom which is a specific relation, and
     #converts it into a Literal at t=0.
@@ -341,11 +361,11 @@ class problem:
     Frame_Statement = SAT_Sentence();
     Exclusive_Statement = SAT_Sentence();
     
+    #The complete statement, for all time steps and everything.
+    Total_Statement = SAT_Sentence();
+    
 
 
-fh = open(sys.argv[1],'r');    
-ThisProblem = problem(fh);
-ThisProblem.set_horizon(3);
-pprint.pprint(ThisProblem);
+
 
 
