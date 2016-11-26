@@ -246,13 +246,23 @@ class problem:
                         Literal_Now.Affirm = not Literal_Now.Affirm;
                         self.Frame_Statement.Clauses.append([Literal_Now] + Base_Clause + [Literal_After]);
                 
+        #Exactly one action type
         At_Least_One_Clause = [Literal(i,True) for i in range(self.N_rels, self.N_rels+self.N_acts)];
-        
         At_Most_One_Clause = [];
         for i in range(self.N_acts):
             for j in range(i+1, self.N_acts):
                 At_Most_One_Clause.append( [Literal(self.N_rels+i,False), Literal(self.N_rels+j,False)] );
         self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);
+        
+        #Exactly one kth argument
+        
+        At_Least_One_Clause = [Literal(self.N_rels+self.N_acts+i,True) for i in range(self.N_vars)];
+        At_Most_One_Clause = [];
+        for k in range(self.N_args):
+            for i in range(self.N_vars):
+                for j in range(i+1, self.N_vars):
+                    At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
+            self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);
             
         
     def set_horizon(self, h):
