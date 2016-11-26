@@ -18,4 +18,6 @@ class Literal:
 class SAT_Sentence:
     N_Vars = -1;
     Clauses = []; #List of Lists of Literal objects
-
+    
+    def __init__(self):
+        self.Clauses = [];

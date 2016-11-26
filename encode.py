@@ -3,6 +3,7 @@ import re;
 import pprint;
 import pdb;
 from collections import OrderedDict; 
+import copy;
 
 from SAT_defs import *;
 
@@ -183,42 +184,68 @@ class problem:
         for atom in self.GoalState:
             lit = self.Rel2Lit(atom);
             Lits[lit.ID] = lit;
-        #Putting in clause form
         self.Goal_Statement.Clauses = [[lit] for lit in Lits];
         
-        #Producing action statements
+        #POSSIBLE IMPROVEMENT: The code below seems to generate 
+        #   equal clauses, which can be excluded, and it also 
+        #   generates clauses with contradicting literals that 
+        #   can get resolved.
+        #
+        #   Also maybe skip actions with contradicting effects
+        #   or preconditions... (if so, keep a list of skipped
+        #   actions, to allow further improvements in frames)
+        #   but first check if this doesn't break the problem.
+        #   Perhaps it's best to add a clause forbidding the
+        #   action.
         for act_name in self.Actions:
             act = self.Actions[act_name];
             
             #Combination of arguments seen as a number of base self.N_vars
             for arg_comb_num in range(self.N_vars**act.Num_of_args):
                 args = [];
-                arg_inds = [];
-                for arg_ordinal in range(act.Num_of_args):
+                var_inds = [];
+                for arg_ordinal in range(act.Num_of_args): #Translating arg_comb_num into a list of literals and variable indexes
                     arg_var_ind = self.N_rels + self.N_acts + \
                       self.N_vars*arg_ordinal + arg_comb_num%self.N_vars;
                     
-                    arg_inds.append(arg_comb_num%self.N_vars);
-                    args.append(Literal(arg_var_ind, True));
+                    var_inds.append(arg_comb_num%self.N_vars);
+                    args.append(Literal(arg_var_ind, False));
                     arg_comb_num//=self.N_vars;
                 
-                Base_Clause = [Literal(act.Ind, True)] + args;
+                Base_Clause = [Literal(act.Ind, False)] + args;
                 
-                #Now produce the clauses. One for each precondition and effect
+                #Producing action statements
+                #One clause for each precondition and effect
                 for precond in act.Precond:
-                    Precond_Lit = self.Rel2Lit(precond, arg_inds);
+                    Precond_Lit = self.Rel2Lit(precond, var_inds);
                     This_Clause = Base_Clause + [Precond_Lit];
                     self.Actions_Statement.Clauses.append(This_Clause);
                 for effect in act.Effects:
-                    Effect_Lit = self.Rel2Lit(effect, arg_inds);
-                    Effect_Lit.ID += self.N_lits_t;
+                    Effect_Lit = self.Rel2Lit(effect, var_inds);
+                    Effect_Lit.ID += self.N_lits_t; #Effects are on the next time step
                     This_Clause = Base_Clause + [Effect_Lit];
                     self.Actions_Statement.Clauses.append(This_Clause);                    
-                #POSSIBLE IMPROVEMENT: The above code seems to generate 
-                #   equal clauses, which can be excluded, and it also 
-                #   generates clauses with contradicting literals that 
-                #   can get resolved.
-    
+                
+                #All the relations are created, after which, the ones 
+                #that are affected by this action are removed
+                rel_IDs = list(range(self.N_rels));
+                
+                for effect in act.Effects:
+                    LitID = self.Rel2Lit(effect, var_inds).ID;
+                    try:
+                        rel_IDs.remove(LitID);
+                    except ValueError:
+                        pass; # Sometimes effects get doubled
+                
+                #~ #Introducing the frame axioms    
+                for rel_ID in rel_IDs:
+                    for affirm_state in [False, True]:
+                        Literal_Now = Literal(rel_ID, affirm_state);
+                        Literal_After = copy.deepcopy(Literal_Now);
+                        Literal_After.ID += self.N_lits_t;
+                        Literal_Now.Affirm = not Literal_Now.Affirm;
+                        self.Frame_Statement.Clauses.append([Literal_Now] + Base_Clause + [Literal_After]);
+                    
     def set_horizon(self, h):
         self.h = h;
         for rel in self.GoalState:
@@ -277,6 +304,8 @@ class problem:
         S+='\tInit_Statement: %s\n'%self.Init_Statement.Clauses;
         S+='\tGoal_Statement: %s\n'%self.Goal_Statement.Clauses;
         S+='\tActions_Statement: %s -> %d clauses\n'%(self.Actions_Statement.Clauses, len(self.Actions_Statement.Clauses));
+        S+='\tFrame_Statement: %s -> %d clauses\n'%(self.Frame_Statement.Clauses, len(self.Frame_Statement.Clauses));
+        S+='\tExclusive_Statement: %s -> %d clauses\n'%(self.Exclusive_Statement.Clauses, len(self.Exclusive_Statement.Clauses));
         
         return S;
         
