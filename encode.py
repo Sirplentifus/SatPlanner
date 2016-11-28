@@ -104,6 +104,8 @@ class problem:
     N_lits_t=0; #literals per time step (before horizon)
     N_lits = 0;
     
+    h = None;
+    
     def __init__(self, fileHandle=None):
         
         if(fileHandle == None):
@@ -243,7 +245,6 @@ class problem:
                         Literal_Now = Literal(rel_ID, affirm_state);
                         Literal_After = copy.deepcopy(Literal_Now);
                         Literal_After.ID += self.N_lits_t;
-                        Literal_Now.Affirm = not Literal_Now.Affirm;
                         self.Frame_Statement.Clauses.append([Literal_Now] + Base_Clause + [Literal_After]);
                 
         #Exactly one action type
@@ -262,15 +263,14 @@ class problem:
             for i in range(self.N_vars):
                 for j in range(i+1, self.N_vars):
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
-            self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);
-            
+            self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);           
         
     def set_horizon(self, h):
         self.h = h;
         self.N_lits = self.N_lits_t*self.h + self.N_rels;
         
-        self.Total_Statement.N_Vars = self.N_lits;
         self.Total_Statement = copy.deepcopy(self.Init_Statement);
+        self.Total_Statement.N_Vars = self.N_lits;
         
         for Clause in self.Goal_Statement.Clauses:
             New_Clause = [];
@@ -289,7 +289,7 @@ class problem:
                     new_Lit.ID += self.N_lits_t*t;
                     New_Clause.append(new_Lit);
                 self.Total_Statement.Clauses.append(New_Clause);
-            
+                
             
     #This method translates An_Atom which is a specific relation, and
     #converts it into a Literal at t=0.
@@ -336,15 +336,15 @@ class problem:
         S+='Initial State: %s\n'%self.InitialState;
         S+='Goal State   : %s\n'%self.GoalState;
         
-        if(self.h>=0):
+        if(self.h != None):
             S+='Total number of literals for h=%d: %d\n'%(self.h, self.N_lits);
         
         S+='Pre-calculated values for encoding:\n';
-        S+='\tInit_Statement: %s\n'%self.Init_Statement.Clauses;
-        S+='\tGoal_Statement: %s\n'%self.Goal_Statement.Clauses;
-        S+='\tActions_Statement: %s -> %d clauses\n'%(self.Actions_Statement.Clauses, len(self.Actions_Statement.Clauses));
-        S+='\tFrame_Statement: %s -> %d clauses\n'%(self.Frame_Statement.Clauses, len(self.Frame_Statement.Clauses));
-        S+='\tExclusive_Statement: %s -> %d clauses\n'%(self.Exclusive_Statement.Clauses, len(self.Exclusive_Statement.Clauses));
+        S+='\tInit_Statement: %s\n'%self.Init_Statement;
+        S+='\tGoal_Statement: %s\n'%self.Goal_Statement;
+        S+='\tActions_Statement: %s\n'%self.Actions_Statement;
+        S+='\tFrame_Statement: %s\n'%self.Frame_Statement;
+        S+='\tExclusive_Statement: %s\n'%self.Exclusive_Statement;
         
         return S;
         
@@ -364,7 +364,6 @@ class problem:
     #The complete statement, for all time steps and everything.
     Total_Statement = SAT_Sentence();
     
-
 
 
 

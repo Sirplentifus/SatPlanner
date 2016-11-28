@@ -21,3 +21,17 @@ class SAT_Sentence:
     
     def __init__(self):
         self.Clauses = [];
+        
+    def __repr__(self):
+        S = '';
+        MAX_REPRESENTED = 10;
+        if(len(self.Clauses)<=MAX_REPRESENTED):
+            S+= '%s'%self.Clauses;
+        else:
+            S+= '%s (...)'%self.Clauses[:MAX_REPRESENTED];
+        S+='-> %d Clauses'%(len(self.Clauses));
+        
+        if(self.N_Vars>0):
+           S+= ' and %d distinct literals'%(self.N_Vars);
+        
+        return S;
