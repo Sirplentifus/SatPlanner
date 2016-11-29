@@ -245,6 +245,7 @@ class problem:
                         Literal_Now = Literal(rel_ID, affirm_state);
                         Literal_After = copy.deepcopy(Literal_Now);
                         Literal_After.ID += self.N_lits_t;
+                        Literal_Now.Affirm = not Literal_Now.Affirm;
                         self.Frame_Statement.Clauses.append([Literal_Now] + Base_Clause + [Literal_After]);
                 
         #Exactly one action type
@@ -290,7 +291,6 @@ class problem:
                     New_Clause.append(new_Lit);
                 self.Total_Statement.Clauses.append(New_Clause);
                 
-            
     #This method translates An_Atom which is a specific relation, and
     #converts it into a Literal at t=0.
     def Rel2Lit(self, An_Atom, arg_inds=None):
@@ -318,7 +318,29 @@ class problem:
         ret.Affirm = An_Atom.affirm;
         
         return ret;
-   
+    
+    def decode_assignment(self, assignments):
+        S = '';
+        for t in range(self.h):
+            
+            Action_ID = [i for i in range(self.N_rels,self.N_rels+self.N_acts) if assignments[i+t*self.N_lits_t]];
+            if(len(Action_ID) != 1):
+                raise(ValueError('Incorrect number of active actions'));
+            Action_ID = Action_ID[0];
+            
+            Action_name = [a for a in self.Actions if self.Actions[a].Ind==Action_ID];
+            S += Action_name[0]+' ';
+            
+            for arg_ordinal in range(self.N_args):
+                Arg_ID = [i for i in range(self.N_vars) if assignments[i+self.N_rels+self.N_acts+arg_ordinal*self.N_vars+t*self.N_lits_t]];
+                
+                if(len(Arg_ID) != 1):
+                    raise(ValueError('Incorrect number of arguments'));
+                
+                S += self.Variables[Arg_ID[0]] + ' ';
+            S += '\n';
+        return S;
+        
     def __repr__(self):
         S =  '\nVariables: %s\n'%self.Variables;
         S += 'Relations:';

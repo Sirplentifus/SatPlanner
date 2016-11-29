@@ -1,3 +1,3 @@
 I 
-A setonfire(b) : -onfire(b) -> -onfire(b)
+A setonfire(b) : -onfire(b) -> onfire(b)
 G onfire(A) onfire(B)

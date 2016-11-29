@@ -24,7 +24,7 @@ class SAT_Sentence:
         
     def __repr__(self):
         S = '';
-        MAX_REPRESENTED = 10;
+        MAX_REPRESENTED = 100;
         if(len(self.Clauses)<=MAX_REPRESENTED):
             S+= '%s'%self.Clauses;
         else:
@@ -35,3 +35,9 @@ class SAT_Sentence:
            S+= ' and %d distinct literals'%(self.N_Vars);
         
         return S;
+        
+def complexity(SAT_phrase):
+    ret = 0;
+    for Clause in SAT_phrase.Clauses:
+        ret += len(Clause);
+    return ret;
