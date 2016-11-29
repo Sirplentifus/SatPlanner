@@ -1,0 +1,5 @@
+I  on(A) conn(A,B) conn(B,C) conn(C,D) conn(C,E)
+
+A  move(x,y)  :  on(x) conn(x,y)  ->  on(y)
+
+G  on(D)

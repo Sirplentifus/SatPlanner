@@ -108,6 +108,19 @@ class problem:
     
     def __init__(self, fileHandle=None):
         
+        #Initializing
+        self.Variables = [];
+        self.Relations = OrderedDict(); 
+        self.Actions = OrderedDict();
+        self.InitialState = []; 
+        self.GoalState = [];
+        self.Init_Statement = SAT_Sentence();
+        self.Goal_Statement = SAT_Sentence();
+        self.Actions_Statement = SAT_Sentence();
+        self.Frame_Statement = SAT_Sentence();
+        self.Exclusive_Statement = SAT_Sentence();
+        self.Total_Statement = SAT_Sentence();
+        
         if(fileHandle == None):
             return;
         
@@ -267,11 +280,11 @@ class problem:
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
             self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);         
             
-        SAT_save(self.Init_Statement, 'Init_Statement.dat');
-        SAT_save(self.Goal_Statement, 'Goal_Statement.dat');
-        SAT_save(self.Actions_Statement, 'Actions_Statement.dat');
-        SAT_save(self.Frame_Statement, 'Frame_Statement.dat');
-        SAT_save(self.Exclusive_Statement, 'Exclusive_Statement.dat');
+        SAT_save(self.Init_Statement, './Dump/Init_Statement.dat');
+        SAT_save(self.Goal_Statement, './Dump/Goal_Statement.dat');
+        SAT_save(self.Actions_Statement, './Dump/Actions_Statement.dat');
+        SAT_save(self.Frame_Statement, './Dump/Frame_Statement.dat');
+        SAT_save(self.Exclusive_Statement, './Dump/Exclusive_Statement.dat');
         
     def set_horizon(self, h):
         self.h = h;

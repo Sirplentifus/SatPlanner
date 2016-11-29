@@ -1,5 +1,6 @@
 from encode import *;
 from SAT_solver import *;
+import pdb;
 
 fh = open(sys.argv[1],'r');    
 ThisProblem = problem(fh);
