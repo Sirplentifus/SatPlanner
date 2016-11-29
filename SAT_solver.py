@@ -9,8 +9,8 @@ class SAT_solver:
         self.Assignments = [None]*SAT_Problem.N_Vars;
         self.Pre_Simplify();
         self.Guesses = []; #List of literals representing assignments made in branches
-        self.DEBUG = True;
-        self.ASK = True;
+        self.DEBUG = False;
+        self.ASK = False;
     
     #Applies a version of the DPLL algorithm to solve the problem
     #Returns False if impossible and True if solved
@@ -246,4 +246,4 @@ def ass_print(assignments):
     if( ass_L%10 ):
         L+=1;
     for i in range(L):
-        print('(%d-%d) - %s'%(i*10,min(i*10+9,ass_L-1),assignments[i*10:min(i*10+10,ass_L)]));
+        print('(%d-%d) - %s'%(i*10+1,min(i*10+10,ass_L-1),assignments[i*10:min(i*10+10,ass_L)]));

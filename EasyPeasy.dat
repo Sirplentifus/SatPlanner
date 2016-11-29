@@ -1,3 +1,4 @@
 I 
 A setonfire(b) : -onfire(b) -> onfire(b)
+A extinguish(b)  :  onfire(b) -> -onfire(b)
 G onfire(A) onfire(B)

@@ -181,12 +181,11 @@ class problem:
         #Putting in clause form
         self.Init_Statement.Clauses = [[lit] for lit in Lits];
         
-        #Repeat of the previous, but for Goal state
-        Lits = [Literal(i, False) for i in list(range(self.N_rels))];
+        self.Goal_Statement.Clauses = [];
+        #Clauses for Goal state
         for atom in self.GoalState:
             lit = self.Rel2Lit(atom);
-            Lits[lit.ID] = lit;
-        self.Goal_Statement.Clauses = [[lit] for lit in Lits];
+            self.Goal_Statement.Clauses.append([lit]);
         
         #POSSIBLE IMPROVEMENT: The code below seems to generate 
         #   equal clauses, which can be excluded, and it also 
@@ -266,7 +265,13 @@ class problem:
             for i in range(self.N_vars):
                 for j in range(i+1, self.N_vars):
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
-            self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);           
+            self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);         
+            
+        SAT_save(self.Init_Statement, 'Init_Statement.dat');
+        SAT_save(self.Goal_Statement, 'Goal_Statement.dat');
+        SAT_save(self.Actions_Statement, 'Actions_Statement.dat');
+        SAT_save(self.Frame_Statement, 'Frame_Statement.dat');
+        SAT_save(self.Exclusive_Statement, 'Exclusive_Statement.dat');
         
     def set_horizon(self, h):
         self.h = h;
@@ -323,6 +328,7 @@ class problem:
     
     def decode_assignment(self, assignments):
         S = '';
+        
         for t in range(self.h):
             
             Action_ID = [i for i in range(self.N_rels,self.N_rels+self.N_acts) if assignments[i+t*self.N_lits_t]];
@@ -331,9 +337,10 @@ class problem:
             Action_ID = Action_ID[0];
             
             Action_name = [a for a in self.Actions if self.Actions[a].Ind==Action_ID];
-            S += Action_name[0]+' ';
+            Action_name = Action_name[0];
+            S += Action_name+' ';
             
-            for arg_ordinal in range(self.N_args):
+            for arg_ordinal in range(self.Actions[Action_name].Num_of_args):
                 Arg_ID = [i for i in range(self.N_vars) if assignments[i+self.N_rels+self.N_acts+arg_ordinal*self.N_vars+t*self.N_lits_t]];
                 
                 if(len(Arg_ID) != 1):
