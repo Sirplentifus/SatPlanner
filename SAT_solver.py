@@ -2,12 +2,15 @@ from SAT_defs import *;
 import copy;
 import pdb;
 
+
 class SAT_solver:
     def __init__(self, SAT_Problem):
         self.SAT_problem = copy.deepcopy(SAT_Problem);
         self.Assignments = [None]*SAT_Problem.N_Vars;
         self.Pre_Simplify();
         self.Guesses = []; #List of literals representing assignments made in branches
+        self.DEBUG = True;
+        self.ASK = True;
     
     #Applies a version of the DPLL algorithm to solve the problem
     #Returns False if impossible and True if solved
@@ -15,30 +18,44 @@ class SAT_solver:
         
         while(True):
             
-            print('Current problem complexity: %d'%complexity(self.SAT_problem));
-            print('Press enter to continue');
-            x = input();
+            if(self.DEBUG):
+                print('Current problem complexity: %d'%complexity(self.SAT_problem));
+                if(self.ASK):
+                    print('Press enter to continue');
+                    x = input();
+                else:
+                    print();
             
             try: 
                 self.Simplify();
             except ValueError:
-                print('Empty clause found, backtracking...');
+                if(self.DEBUG):
+                    print('Empty clause found, backtracking...');
                 self.BackTrack();
+                continue;
             
-            print('Problem complexity after simplification: %d'%complexity(self.SAT_problem));
-            if(x=='pp'):
-                print(self.SAT_problem);
-            
+            if(self.DEBUG):
+                print('Problem complexity after simplification: %d'%complexity(self.SAT_problem));
+                if('p' in x):
+                    print(self.SAT_problem);
+                if('a' in x):
+                    ass_print(self.Assignments);
+                if('c' in x):
+                    self.DEBUG = False;
+                if('n' in x):
+                    self.ASK = False;
             if(not self.SAT_problem.Clauses):
-                print('Problem Solved\n');
-                return; #Problem Solved
+                    print('Problem Solved\n');
+                    return; #Problem Solved
                 
             try:
                 if(self.Assign_Units()):
                     continue;
             except ValueError:
-                print('Contradicting unit found, backtracking...');
+                if(self.DEBUG):
+                    print('Contradicting unit found, backtracking...');
                 self.BackTrack();
+                continue;
             
             if(self.Assign_Pure()):
                 continue;
@@ -50,16 +67,18 @@ class SAT_solver:
             
             new_guess = Guess();
             new_guess.Sentence_Before = copy.deepcopy(self.SAT_problem);
+            new_guess.Assignments_Before = copy.deepcopy(self.Assignments);
             
             for i in range(self.SAT_problem.N_Vars):
                 if(self.Assignments[i] == None):
                     new_guess.Lit_ID = i;
-                    new_guess.Tried[True] = True;
-                    self.Assignments[i] = True;
+                    new_guess.Tried[False] = True;
+                    self.Assignments[i] = False;
                     break;
             self.Guesses.append(new_guess);
-            print('No units or literals found - branching: %s'%new_guess);
-            print('Full tree:%s'%self.Guesses);
+            if(self.DEBUG):
+                print('No units or literals found - branching: %s'%new_guess);
+                print('Full tree:%s'%self.Guesses);
             
     
     #Removes clauses with true literals
@@ -137,7 +156,7 @@ class SAT_solver:
                     raise(ValueError('Unit assignment contradicts previous assignment'));
                 self.Assignments[unit_lit.ID] = unit_lit.Affirm;
                 Clauses_to_Remove.append(Clause);
-        if(Clauses_to_Remove):
+        if(self.DEBUG and bool(Clauses_to_Remove)):
             print('Unit clauses found: %s'%Clauses_to_Remove);
         for Clause_to_Remove in Clauses_to_Remove:
             self.SAT_problem.Clauses.remove(Clause_to_Remove);
@@ -164,7 +183,8 @@ class SAT_solver:
         
         if( Literals[ID].N_Appear > 0):
             self.Assignments[ID] = Literals[ID].PureAffirm;
-            print('Pure iteral found: %s'%Literal(ID ,Literals[ID].PureAffirm));
+            if(self.DEBUG):
+                print('Pure iteral found: %s'%Literal(ID ,Literals[ID].PureAffirm));
             return True;
         else:
             return False;
@@ -175,16 +195,21 @@ class SAT_solver:
             this_Guess = self.Guesses.pop();
             Untried = [a for a in this_Guess.Tried if this_Guess.Tried[a]==False];
             if(Untried):
+                if(not self.Guesses):
+                        pdb.set_trace();
                 Untried = Untried[0];
                 this_Guess.Tried[Untried] = True;
+                self.Assignments = this_Guess.Assignments_Before;
                 self.Assignments[this_Guess.Lit_ID] = bool(Untried);
-                self.SAT_Problem = this_Guess.Sentence_Before;
+                self.SAT_problem = copy.deepcopy(this_Guess.Sentence_Before); #No need to copy, right?
                 self.Guesses.append(this_Guess);
-                print('Guesses list: %s'%self.Guesses);
+                if(self.DEBUG):
+                    print('Guesses list: %s'%self.Guesses);
+                    print('Complexity of recovered state: %d'%complexity(self.SAT_problem));
                 return;
-            else:
-                self.Assignments[this_Guess.Lit_ID] = None;
-                continue;
+            #~ else:
+                #~ self.Assignments[this_Guess.Lit_ID] = None;
+                #~ continue;
         
             
         raise(ValueError('Problem is impossible'));
@@ -205,12 +230,20 @@ class Literal_Info:
 
 #Class that maintains info on guesses made
 class Guess:
-    Lit_ID = -1;
-    Tried = [False]*2;
-    Sentence_Before = SAT_Sentence();
+    def __init__(self):
+        self.Lit_ID = -1;
+        self.Tried = [False]*2;
+        self.Sentence_Before = SAT_Sentence();
+        self.Assignments_Before = [];
     
     #For debugging:
     def __repr__(self):
         return '<%d, %s>'%(self.Lit_ID, self.Tried);
     
-    
+def ass_print(assignments):
+    ass_L = len(assignments);
+    L = ass_L//10;
+    if( ass_L%10 ):
+        L+=1;
+    for i in range(L):
+        print('(%d-%d) - %s'%(i*10,min(i*10+9,ass_L-1),assignments[i*10:min(i*10+10,ass_L)]));

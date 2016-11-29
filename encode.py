@@ -258,9 +258,11 @@ class problem:
         
         #Exactly one kth argument
         
-        At_Least_One_Clause = [Literal(self.N_rels+self.N_acts+i,True) for i in range(self.N_vars)];
+        
         At_Most_One_Clause = [];
         for k in range(self.N_args):
+            At_Least_One_Clause = [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,True) for i in range(self.N_vars)];
+            At_Most_One_Clause = [];
             for i in range(self.N_vars):
                 for j in range(i+1, self.N_vars):
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
