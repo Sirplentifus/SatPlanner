@@ -7,10 +7,14 @@ class SAT_solver:
     def __init__(self, SAT_Problem):
         self.SAT_problem = copy.deepcopy(SAT_Problem);
         self.Assignments = [None]*SAT_Problem.N_Vars;
-        self.Pre_Simplify();
+        
         self.Guesses = []; #List of literals representing assignments made in branches
         self.DEBUG = False;
-        self.ASK = False;
+        self.ASK = True;
+        
+        self.Unsolvable = False; 
+        
+        self.Pre_Simplify();
     
     #Applies a version of the DPLL algorithm to solve the problem
     #Returns False if impossible and True if solved
@@ -26,13 +30,14 @@ class SAT_solver:
                 else:
                     print();
             
-            try: 
-                self.Simplify();
-            except ValueError:
+            if(not self.Simplify()):
                 if(self.DEBUG):
-                    print('Empty clause found, backtracking...');
-                self.BackTrack();
-                continue;
+                    print('Assignment is inconsistent, backtracking...');
+                if(self.BackTrack()):
+                    continue;
+                else:
+                    return False;
+            
             
             if(self.DEBUG):
                 print('Problem complexity after simplification: %d'%complexity(self.SAT_problem));
@@ -44,17 +49,11 @@ class SAT_solver:
                     self.DEBUG = False;
                 if('n' in x):
                     self.ASK = False;
+                    
             if(not self.SAT_problem.Clauses):
-                    print('Problem Solved\n');
-                    return; #Problem Solved
-                
-            try:
-                if(self.Assign_Units()):
-                    continue;
-            except ValueError:
-                if(self.DEBUG):
-                    print('Contradicting unit found, backtracking...');
-                self.BackTrack();
+                return True; #Problem Solved
+            
+            if(self.Assign_Units()):
                 continue;
             
             if(self.Assign_Pure()):
@@ -79,12 +78,15 @@ class SAT_solver:
             if(self.DEBUG):
                 print('No units or literals found - branching: %s'%new_guess);
                 print('Full tree:%s'%self.Guesses);
-            
+        
     
     #Removes clauses with true literals
     #Removes literals that are false
-    #Raises exception if clauses are empty
+    #Returns False if problem is unsolvable, and True otherwise
     def Simplify(self):
+        
+        if(self.Unsolvable):
+            return False;
         
         rem_clauses = [];
         for Clause in self.SAT_problem.Clauses:
@@ -101,11 +103,11 @@ class SAT_solver:
             for rem_lit in rem_lits:
                 Clause.remove(rem_lit);
             if(not Clause):
-                raise(ValueError('Empty Clause produced by simplify'));
+                return False;
         
         for rem_clause in rem_clauses:
             self.SAT_problem.Clauses.remove(rem_clause);
-            
+        return True;
         
     #Removes contradicting literals in a clause
     #Removes repeating literals in a clause
@@ -140,11 +142,13 @@ class SAT_solver:
                         Clause.remove(lit);
                 
             if(not Clause):
-                raise(ValueError('Simplification produces empty clause'));
-                        
+                self.Unsolvable = True;
+                return;
+            
     #Assign all the literals in unit clauses.
-    #Raises exception if an assignment contradicts an existing one
-    #Returns True if any units were found and False otherwise
+    #Returns True if any units were found or problem was found to be 
+    #unsolvable and False otherwise
+    #If it finds the problem unsolvable, it sets the flag Unsolvable
     def Assign_Units(self):
         ret = False;
         Clauses_to_Remove = [];
@@ -153,7 +157,9 @@ class SAT_solver:
                 ret = True;
                 unit_lit = Clause[0];
                 if(self.Assignments[unit_lit.ID] == (not unit_lit.Affirm)): #WARNING: not None evalueates to True
-                    raise(ValueError('Unit assignment contradicts previous assignment'));
+                    self.Unsolvable = True;
+                    return True;
+                    pdb.set_trace();
                 self.Assignments[unit_lit.ID] = unit_lit.Affirm;
                 Clauses_to_Remove.append(Clause);
         if(self.DEBUG and bool(Clauses_to_Remove)):
@@ -184,7 +190,7 @@ class SAT_solver:
         if( Literals[ID].N_Appear > 0):
             self.Assignments[ID] = Literals[ID].PureAffirm;
             if(self.DEBUG):
-                print('Pure iteral found: %s'%Literal(ID ,Literals[ID].PureAffirm));
+                print('Pure literal found: %s'%Literal(ID ,Literals[ID].PureAffirm));
             return True;
         else:
             return False;
@@ -195,24 +201,22 @@ class SAT_solver:
             this_Guess = self.Guesses.pop();
             Untried = [a for a in this_Guess.Tried if this_Guess.Tried[a]==False];
             if(Untried):
-                if(not self.Guesses):
-                        pdb.set_trace();
                 Untried = Untried[0];
                 this_Guess.Tried[Untried] = True;
                 self.Assignments = this_Guess.Assignments_Before;
                 self.Assignments[this_Guess.Lit_ID] = bool(Untried);
                 self.SAT_problem = copy.deepcopy(this_Guess.Sentence_Before); #No need to copy, right?
                 self.Guesses.append(this_Guess);
+                self.Unsolvable = False;
                 if(self.DEBUG):
                     print('Guesses list: %s'%self.Guesses);
                     print('Complexity of recovered state: %d'%complexity(self.SAT_problem));
-                return;
+                return True;
             #~ else:
                 #~ self.Assignments[this_Guess.Lit_ID] = None;
                 #~ continue;
         
-            
-        raise(ValueError('Problem is impossible'));
+        return False;
         
         
     
@@ -238,7 +242,7 @@ class Guess:
     
     #For debugging:
     def __repr__(self):
-        return '<%d, %s>'%(self.Lit_ID, self.Tried);
+        return '<%d, %s>'%(self.Lit_ID+1, self.Tried);
     
 def ass_print(assignments):
     ass_L = len(assignments);
@@ -246,4 +250,4 @@ def ass_print(assignments):
     if( ass_L%10 ):
         L+=1;
     for i in range(L):
-        print('(%d-%d) - %s'%(i*10+1,min(i*10+10,ass_L-1),assignments[i*10:min(i*10+10,ass_L)]));
+        print('(%d-%d) - %s'%(i*10+1,min(i*10+10,ass_L),assignments[i*10:min(i*10+10,ass_L)]));

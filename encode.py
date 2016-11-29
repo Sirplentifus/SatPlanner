@@ -370,12 +370,12 @@ class problem:
         if(self.h != None):
             S+='Total number of literals for h=%d: %d\n'%(self.h, self.N_lits);
         
-        S+='Pre-calculated values for encoding:\n';
-        S+='\tInit_Statement: %s\n'%self.Init_Statement;
-        S+='\tGoal_Statement: %s\n'%self.Goal_Statement;
-        S+='\tActions_Statement: %s\n'%self.Actions_Statement;
-        S+='\tFrame_Statement: %s\n'%self.Frame_Statement;
-        S+='\tExclusive_Statement: %s\n'%self.Exclusive_Statement;
+        #~ S+='Pre-calculated values for encoding:\n';
+        #~ S+='\tInit_Statement: %s\n'%self.Init_Statement;
+        #~ S+='\tGoal_Statement: %s\n'%self.Goal_Statement;
+        #~ S+='\tActions_Statement: %s\n'%self.Actions_Statement;
+        #~ S+='\tFrame_Statement: %s\n'%self.Frame_Statement;
+        #~ S+='\tExclusive_Statement: %s\n'%self.Exclusive_Statement;
         
         return S;
         
