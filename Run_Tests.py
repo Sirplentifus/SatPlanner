@@ -34,7 +34,7 @@ for file_name in File_Names:
         print('Problem solved:');
         print('Solution:\n%s'%ThisProblem.decode_assignment(Solver.Assignments));
     else:
-        print('Problem could not be solved');
+        print('Problem could not be solved\n');
     
     print('Elapsed time: %.1f\n'%(time.time() - t));
     

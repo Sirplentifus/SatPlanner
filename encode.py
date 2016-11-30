@@ -10,7 +10,7 @@ class Relation: #Information about a relation in the general sense
     def __init__(self):
         self.Num_of_vars = -1;
         self.Start_Ind = -1; #Index of SAT_Variables in which the SAT_variables associated with this relation start.
-    
+        
     def __repr__(self):
         return '\tNum_of_Vars: %d\n\tStart_Ind: %d'%(self.Num_of_vars, self.Start_Ind);
 
@@ -280,12 +280,6 @@ class problem:
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
             self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);         
             
-        SAT_save(self.Init_Statement, './Dump/Init_Statement.dat');
-        SAT_save(self.Goal_Statement, './Dump/Goal_Statement.dat');
-        SAT_save(self.Actions_Statement, './Dump/Actions_Statement.dat');
-        SAT_save(self.Frame_Statement, './Dump/Frame_Statement.dat');
-        SAT_save(self.Exclusive_Statement, './Dump/Exclusive_Statement.dat');
-        
     def set_horizon(self, h):
         self.h = h;
         self.N_lits = self.N_lits_t*self.h + self.N_rels;
@@ -382,13 +376,6 @@ class problem:
         
         if(self.h != None):
             S+='Total number of literals for h=%d: %d\n'%(self.h, self.N_lits);
-        
-        #~ S+='Pre-calculated values for encoding:\n';
-        #~ S+='\tInit_Statement: %s\n'%self.Init_Statement;
-        #~ S+='\tGoal_Statement: %s\n'%self.Goal_Statement;
-        #~ S+='\tActions_Statement: %s\n'%self.Actions_Statement;
-        #~ S+='\tFrame_Statement: %s\n'%self.Frame_Statement;
-        #~ S+='\tExclusive_Statement: %s\n'%self.Exclusive_Statement;
         
         return S;
         

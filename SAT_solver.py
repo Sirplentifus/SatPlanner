@@ -168,7 +168,7 @@ class SAT_solver:
             self.SAT_problem.Clauses.remove(Clause_to_Remove);
         return ret;
 
-    #Look for pure symbols and assign the one that appears in the most clauses
+    #Look for pure symbols and assign them
     def Assign_Pure(self):
         Literals = [Literal_Info() for i in range(self.SAT_problem.N_Vars)];
         
@@ -185,15 +185,15 @@ class SAT_solver:
                 else:
                     Literals[lit.ID].N_Appear = -1;
         
-        ID = max(range(self.SAT_problem.N_Vars), key = lambda ind: Literals[ind].N_Appear);
-        
-        if( Literals[ID].N_Appear > 0):
-            self.Assignments[ID] = Literals[ID].PureAffirm;
-            if(self.DEBUG):
-                print('Pure literal found: %s'%Literal(ID ,Literals[ID].PureAffirm));
-            return True;
-        else:
-            return False;
+        ret = False;
+        for ind in range(self.SAT_problem.N_Vars):
+            if(Literals[ind].N_Appear > 0):
+                self.Assignments[ind] = Literals[ind].PureAffirm;
+                if(self.DEBUG):
+                    print('Pure literal found: %s'%Literal(ID ,Literals[ID].PureAffirm));
+                ret = True;
+                
+        return ret;
     
     #Backs up until the last guess that still has an untried option
     def BackTrack(self):
@@ -205,7 +205,7 @@ class SAT_solver:
                 this_Guess.Tried[Untried] = True;
                 self.Assignments = this_Guess.Assignments_Before;
                 self.Assignments[this_Guess.Lit_ID] = bool(Untried);
-                self.SAT_problem = copy.deepcopy(this_Guess.Sentence_Before); #No need to copy, right?
+                self.SAT_problem = this_Guess.Sentence_Before;
                 self.Guesses.append(this_Guess);
                 self.Unsolvable = False;
                 if(self.DEBUG):
@@ -243,7 +243,9 @@ class Guess:
     #For debugging:
     def __repr__(self):
         return '<%d, %s>'%(self.Lit_ID+1, self.Tried);
-    
+
+
+
 def ass_print(assignments):
     ass_L = len(assignments);
     L = ass_L//10;

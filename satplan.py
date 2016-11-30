@@ -2,10 +2,11 @@ from encode import *;
 from SAT_solver import *;
 import pdb;
 
+DEBUG = False;
+
 fh = open(sys.argv[1],'r');    
 ThisProblem = problem(fh);
 
-print(ThisProblem);
 
 Solved = False;
 horz = 1;
@@ -18,7 +19,19 @@ while(horz<5):
     else:
         horz+=1;
 
-SAT_save(ThisProblem.Total_Statement, 'SAT.dat');
+if(DEBUG):
+    print(ThisProblem);
+
+    SAT_save(ThisProblem.Init_Statement, './Dump/Init_Statement.dat');
+    SAT_save(ThisProblem.Goal_Statement, './Dump/Goal_Statement.dat');
+    SAT_save(ThisProblem.Actions_Statement, './Dump/Actions_Statement.dat');
+    SAT_save(ThisProblem.Frame_Statement, './Dump/Frame_Statement.dat');
+    SAT_save(ThisProblem.Exclusive_Statement, './Dump/Exclusive_Statement.dat');
+    SAT_save(ThisProblem.Total_Statement, '/Dump/SAT.dat');
+    
+    
+    
+
 
 
 if(Solved):
