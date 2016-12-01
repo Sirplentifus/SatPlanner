@@ -10,7 +10,7 @@ class SAT_solver:
         
         self.Guesses = []; #List of literals representing assignments made in branches
         self.DEBUG = False;
-        self.ASK = True;
+        self.ASK = False;
         
         self.Unsolvable = False; 
         
@@ -189,9 +189,14 @@ class SAT_solver:
         for ind in range(self.SAT_problem.N_Vars):
             if(Literals[ind].N_Appear > 0):
                 self.Assignments[ind] = Literals[ind].PureAffirm;
-                if(self.DEBUG):
-                    print('Pure literal found: %s'%Literal(ID ,Literals[ID].PureAffirm));
                 ret = True;
+        
+        if(self.DEBUG and ret):
+            S = 'Pure literals found: ';
+            for ind in range(self.SAT_problem.N_Vars):
+                if(Literals[ind].N_Appear > 0):
+                    S += '%s '%Literal(ind, Literals[ind].PureAffirm);
+            print(S);
                 
         return ret;
     

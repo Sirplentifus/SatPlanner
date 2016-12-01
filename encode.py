@@ -35,7 +35,7 @@ class Action: #Information about an action in the general sense
         #~ for var in new_atom.Variables:
         for i in range(len(new_atom.Variables)):
             var = new_atom.Variables[i];
-            varind = [i for i in range(len(self.Vars)) if self.Vars[i]==var];
+            varind = [j for j in range(len(self.Vars)) if self.Vars[j]==var];
             
             if(len(varind)==0):
                 pass;
@@ -200,17 +200,6 @@ class problem:
             lit = self.Rel2Lit(atom);
             self.Goal_Statement.Clauses.append([lit]);
         
-        #POSSIBLE IMPROVEMENT: The code below seems to generate 
-        #   equal clauses, which can be excluded, and it also 
-        #   generates clauses with contradicting literals that 
-        #   can get resolved.
-        #
-        #   Also maybe skip actions with contradicting effects
-        #   or preconditions... (if so, keep a list of skipped
-        #   actions, to allow further improvements in frames)
-        #   but first check if this doesn't break the problem.
-        #   Perhaps it's best to add a clause forbidding the
-        #   action.
         for act_name in self.Actions:
             act = self.Actions[act_name];
             
@@ -230,15 +219,25 @@ class problem:
                 
                 #Producing action statements
                 #One clause for each precondition and effect
+                Precond_Lits = [];
                 for precond in act.Precond:
-                    Precond_Lit = self.Rel2Lit(precond, var_inds);
-                    This_Clause = Base_Clause + [Precond_Lit];
-                    self.Actions_Statement.Clauses.append(This_Clause);
+                    Precond_Lits.append(self.Rel2Lit(precond, var_inds));
+                Precond_Lits = self.simplify(Precond_Lits);
+                
+                Effect_Lits = [];
                 for effect in act.Effects:
                     Effect_Lit = self.Rel2Lit(effect, var_inds);
                     Effect_Lit.ID += self.N_lits_t; #Effects are on the next time step
-                    This_Clause = Base_Clause + [Effect_Lit];
-                    self.Actions_Statement.Clauses.append(This_Clause);                    
+                    Effect_Lits.append(Effect_Lit);
+                Effect_Lits = self.simplify(Effect_Lits);
+                
+                if( (not Precond_Lits) or (not Effect_Lits) ):
+                    self.Actions_Statement.Clauses.append(Base_Clause); #An indication that this action cannot be performed
+                    continue; #No need to make the frame statements because of the above
+                
+                for Lit in (Precond_Lits+Effect_Lits):
+                    This_Clause = Base_Clause + [Lit];
+                    self.Actions_Statement.Clauses.append(This_Clause);
                 
                 #All the relations are created, after which, the ones 
                 #that are affected by this action are removed
@@ -269,8 +268,6 @@ class problem:
         self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);
         
         #Exactly one kth argument
-        
-        
         At_Most_One_Clause = [];
         for k in range(self.N_args):
             At_Least_One_Clause = [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,True) for i in range(self.N_vars)];
@@ -279,6 +276,25 @@ class problem:
                 for j in range(i+1, self.N_vars):
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
             self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);         
+    
+    #Removes repeated literals, or everything in the list if 
+    #contradicting literals are present.
+    def simplify( self, lit_list ):
+        lits_to_remove = [];
+        
+        for lit in lit_list:
+            same_lits = [ l for l in lit_list if (l.ID == lit.ID) and (not l is lit) ];
+            cont_lits = [ l for l in same_lits if l.Affirm != lit.Affirm ];
+            
+            if(cont_lits):
+                lit_list = [];
+                return lit_list;
+                
+            lits_to_remove += same_lits;
+            
+        for lit in lits_to_remove:
+            lit_list.remove(lit);
+        return lit_list;
             
     def set_horizon(self, h):
         self.h = h;

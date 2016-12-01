@@ -8,7 +8,7 @@ fh = open(sys.argv[1],'r');
 ThisProblem = problem(fh);
 
 
-Solved = False;
+Solved = True;
 horz = 1;
 while(horz<5):
     ThisProblem.set_horizon(horz);
@@ -27,7 +27,7 @@ if(DEBUG):
     SAT_save(ThisProblem.Actions_Statement, './Dump/Actions_Statement.dat');
     SAT_save(ThisProblem.Frame_Statement, './Dump/Frame_Statement.dat');
     SAT_save(ThisProblem.Exclusive_Statement, './Dump/Exclusive_Statement.dat');
-    SAT_save(ThisProblem.Total_Statement, '/Dump/SAT.dat');
+    SAT_save(ThisProblem.Total_Statement, './Dump/SAT.dat');
     
     
     
