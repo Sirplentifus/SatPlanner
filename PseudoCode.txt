@@ -1,0 +1,22 @@
+for all specific relations:
+	for all action names:
+        For every precondition:
+            collect the argument assignment, if any, that makes this precondition equal the specific relation
+
+    each of those argument assignments for every action name will produce a DNF clause.
+    Negate them all, and add the specific relation, and we get a CNF "action implies precondition" clause.
+
+
+for all specific relations:
+	for all action names:
+        For every effect:
+            collect the argument assignment, if any, that makes this effect equal the specific relation
+    
+    each of those argument assignments for every action name will produce a DNF clause. (After conversion)
+    
+    For each of those clauses_
+        Negate all literals, and add the specific relation (in the next time step), and we get a CNF "action implies effect" clause.
+    
+    For every possible combination of selections from these DNF clauses, create a CNF clause, and collect it in a set (no repetitions)
+    To the resulting sentence, apply simplification procedure similar to SAT_solver
+    
