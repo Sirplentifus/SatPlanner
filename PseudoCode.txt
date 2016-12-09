@@ -20,3 +20,8 @@ for all specific relations:
     For every possible combination of selections from these DNF clauses, create a CNF clause, and collect it in a set (no repetitions)
     To the resulting sentence, apply simplification procedure similar to SAT_solver
     
+
+
+
+
+If a specific relation is not the effect of any possible action, its 2 frame axiom clauses simply state that it does not change

@@ -11,8 +11,11 @@ class Relation: #Information about a relation in the general sense
         self.Num_of_vars = -1;
         self.Start_Ind = -1; #Index of SAT_Variables in which the SAT_variables associated with this relation start.
         
+        self.Precond = []; #List of atoms (with ints args) that correspond to actions that would require this relation as a precondition
+        self.Effects = []; #List of atoms (with ints args) that correspond to actions that would produce this relation as an effect
+        
     def __repr__(self):
-        return '\tNum_of_Vars: %d\n\tStart_Ind: %d'%(self.Num_of_vars, self.Start_Ind);
+        return '\tNum_of_Vars: %d\n\tStart_Ind: %d\n\tPreconditions:%s\n\tEffects:%s'%(self.Num_of_vars, self.Start_Ind, self.Precond, self.Effects);
 
 class Action: #Information about an action in the general sense
     def __init__(self, Variables=None):
@@ -58,7 +61,7 @@ class Action: #Information about an action in the general sense
 class Atom: #Represents a specific relation or action
     def __init__(self, string):
         self.Name = '';
-        self.Variables = [];
+        self.Variables = []; #Strings for actual variable names, ints for when they are to index some list
         self.affirm = None; #True if affirmed, False if negated
         
         if(not string):
@@ -76,6 +79,24 @@ class Atom: #Represents a specific relation or action
             if bool(name):
                 self.Variables.append(name);
     
+    #new_args defines what variables we will have for the arguments at the positions indicated by self.Variables. Irrelevants are left at -1. Incongruancies make this return false
+    def replace_args(self, new_args, N_Args, Variable_Names):
+        new_Variables = [-1]*N_Args;
+        
+        for i in range(len(self.Variables)):
+            var = self.Variables[i];
+            if(isinstance(var, int)):
+                if(new_Variables[var]!=-1 and new_Variables[var]!=new_args[i]):
+                    return False;
+                
+                new_Variables[var] = new_args[i];
+            else:
+                if(var != Variable_Names[new_args[i]]):
+                    return False;
+        
+        self.Variables = new_Variables;
+        return True;
+    
     def __repr__(self):
         
         if(self.affirm):
@@ -84,7 +105,6 @@ class Atom: #Represents a specific relation or action
             S = '-';
         S += '%s%s'%(self.Name, self.Variables);
         return S;
-#Although there are issues with using this as an action if RAA encoding is to be used...
     
 class problem:
     Variables = [];
@@ -124,6 +144,29 @@ class problem:
         if(fileHandle == None):
             return;
         
+        self.read_from_file(fileHandle);
+        
+        self.prepare_literal_convertion();
+        
+        self.prepare_init_statements();
+        
+        self.init_statements();
+    
+    #Selects the region in the literal space where each variable will be
+    def prepare_literal_convertion(self):
+        self.N_vars = len(self.Variables);
+        for rel in self.Relations:
+            self.Relations[rel].Start_Ind = self.N_rels;
+            self.N_rels += self.N_vars**self.Relations[rel].Num_of_vars;
+        
+        for act in self.Actions:
+            self.N_args = max(self.N_args, self.Actions[act].Num_of_args);
+            self.Actions[act].Ind = self.N_rels + self.N_acts;
+            self.N_acts+=1;
+        self.N_lits_t = self.N_rels+self.N_acts+self.N_args*self.N_vars;
+    
+    #Extracts all the information from a file, putting it into a useful form for this class' functions to use
+    def read_from_file(self, fileHandle):
         for line in fileHandle:
             if(line[0] == 'I' or line[0] == 'G'):
                 
@@ -169,21 +212,28 @@ class problem:
                     for va in atm.Variables:
                         if isinstance(va, str) and (not va in self.Variables):
                             self.Variables.append(va);
-        
-        self.N_vars = len(self.Variables);
-        for rel in self.Relations:
-            self.Relations[rel].Start_Ind = self.N_rels;
-            self.N_rels += self.N_vars**self.Relations[rel].Num_of_vars;
-        
-        for act in self.Actions:
-            self.N_args = max(self.N_args, self.Actions[act].Num_of_args);
-            self.Actions[act].Ind = self.N_rels + self.N_acts;
-            self.N_acts+=1;
-        self.N_lits_t = self.N_rels+self.N_acts+self.N_args*self.N_vars;
-        
-        #Precalculating sentences:
-        self.init_statements();
-        
+    
+    def prepare_init_statements(self):
+        for rel_name in self.Relations:
+            rel = self.Relations[rel_name];
+            
+            for act_name in self.Actions:
+                act = self.Actions[act_name];
+                
+                for precond in act.Precond:
+                    if(precond.Name == rel_name):
+                        new_atom = copy.deepcopy(precond);
+                        new_atom.Name = act_name;
+                        rel.Precond.append(new_atom);
+                        
+                for effect in act.Effects:
+                    if(effect.Name == rel_name):
+                        new_atom = copy.deepcopy(effect);
+                        new_atom.Name = act_name;
+                        rel.Effects.append(new_atom);
+            
+    
+    #Precalculats sentences, so they only need to be copied, time delayed, and joined together to make the actual problem statement:
     def init_statements(self):
         #At init all possible lits are negated, except if they're 
         #present in self.InitialState
@@ -199,6 +249,51 @@ class problem:
         for atom in self.GoalState:
             lit = self.Rel2Lit(atom);
             self.Goal_Statement.Clauses.append([lit]);
+        
+        for rel_name in self.Relations:
+            rel = self.Relations[rel_name];
+            #~ pdb.set_trace();
+            #Combination of arguments seen as a number of base self.N_vars
+            for arg_comb_num in range(self.N_vars**rel.Num_of_vars):
+                
+                aux_arg_comb_num = arg_comb_num;
+                
+                rel_ID = rel.Start_Ind + arg_comb_num;
+                var_inds = [];
+                for arg_ordinal in range(rel.Num_of_vars): #Translating arg_comb_num into a list of variable indexes
+                    var_inds.append(aux_arg_comb_num%self.N_vars);
+                    aux_arg_comb_num//=self.N_vars;
+                var_inds.reverse();    
+                
+                #Make a list of all the specific actions (in the form of atoms) that require this rel
+                acts_precond = [];
+                for precond in rel.Precond:
+                    new_atom = copy.deepcopy(precond);
+                    if(new_atom.replace_args(var_inds, self.Actions[new_atom.Name].Num_of_args, self.Variables)):
+                        acts_precond.append(new_atom);
+                #Remove redundancies, or forbid the action if impossible. TODO
+                
+                acts_effects = [];
+                for effect in rel.Effects:
+                    new_atom = copy.deepcopy(effect);
+                    if(new_atom.replace_args(var_inds, self.Actions[new_atom.Name].Num_of_args, self.Variables )):
+                        acts_effects.append(new_atom);
+                #Remove redundancies, or forbid the action if impossible. TODO
+                
+                #Create action implies precondition clauses
+                for precond in acts_precond:
+                    precond_lit = Literal( rel.Start_Ind + arg_comb_num, precond.affirm );
+                    Base_Clause = self.Act2Clause(precond);
+                    self.Actions_Statement.Clauses.append( Base_Clause + [precond_lit]);
+                
+                
+                
+                #Create action implies effect clauses
+                for effect in acts_effects:
+                    effect_lit = Literal( rel.Start_Ind + arg_comb_num + self.N_lits_t, effect.affirm );
+                    Base_Clause = self.Act2Clause(effect);
+                    self.Actions_Statement.Clauses.append( Base_Clause + [effect_lit]);
+                
         
         for act_name in self.Actions:
             act = self.Actions[act_name];
@@ -217,8 +312,8 @@ class problem:
                 
                 Base_Clause = [Literal(act.Ind, False)] + args;
                 
-                #Producing action statements
-                #One clause for each precondition and effect
+                #~ #Producing action statements
+                #~ #One clause for each precondition and effect
                 Precond_Lits = [];
                 for precond in act.Precond:
                     Precond_Lits.append(self.Rel2Lit(precond, var_inds));
@@ -232,15 +327,15 @@ class problem:
                 Effect_Lits = self.simplify(Effect_Lits);
                 
                 if( (not Precond_Lits) or (not Effect_Lits) ):
-                    self.Actions_Statement.Clauses.append(Base_Clause); #An indication that this action cannot be performed
+                    #~ self.Actions_Statement.Clauses.append(Base_Clause); #An indication that this action cannot be performed
                     continue; #No need to make the frame statements because of the above
                 
                 for Lit in (Precond_Lits+Effect_Lits):
                     This_Clause = Base_Clause + [Lit];
-                    self.Actions_Statement.Clauses.append(This_Clause);
+                    #~ self.Actions_Statement.Clauses.append(This_Clause);
                 
-                #All the relations are created, after which, the ones 
-                #that are affected by this action are removed
+                #~ #All the relations are created, after which, the ones 
+                #~ #that are affected by this action are removed
                 rel_IDs = list(range(self.N_rels));
                 
                 for effect in act.Effects:
@@ -276,6 +371,7 @@ class problem:
                 for j in range(i+1, self.N_vars):
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
             self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);         
+    
     
     #Removes repeated literals, or everything in the list if 
     #contradicting literals are present.
@@ -349,6 +445,21 @@ class problem:
         
         return ret;
     
+    def Act2Clause(self, An_Atom):
+        Clause = [Literal(self.Actions[An_Atom.Name].Ind, False)];
+        
+        for n_arg in range(len(An_Atom.Variables)) :
+            
+            var = An_Atom.Variables[n_arg];
+            
+            assert(isinstance(var,int));
+            if(var != -1):
+                Clause.append(Literal( self.N_rels + self.N_acts + self.N_vars*n_arg + var, False ));
+        
+        return Clause;
+            
+            
+    
     def decode_assignment(self, assignments):
         S = '';
         
@@ -372,7 +483,8 @@ class problem:
                 S += self.Variables[Arg_ID[0]] + ' ';
             S += '\n';
         return S;
-        
+    
+    
     def __repr__(self):
         S =  '\nVariables: %s\n'%self.Variables;
         S += 'Relations:';
