@@ -4,9 +4,9 @@ import pdb;
 
 
 class SAT_solver:
-    def __init__(self, SAT_Problem):
-        self.SAT_problem = copy.deepcopy(SAT_Problem);
-        self.Assignments = [None]*SAT_Problem.N_Vars;
+    def __init__(self, CNF_SAT_Problem):
+        self.CNF_SAT_Problem = copy.deepcopy(CNF_SAT_Problem);
+        self.Assignments = [None]*CNF_SAT_Problem.N_Vars;
         
         self.Guesses = []; #List of literals representing assignments made in branches
         self.DEBUG = False;
@@ -23,7 +23,7 @@ class SAT_solver:
         while(True):
             
             if(self.DEBUG):
-                print('Current problem complexity: %d'%complexity(self.SAT_problem));
+                print('Current problem complexity: %d'%complexity(self.CNF_SAT_Problem));
                 if(self.ASK):
                     print('Press enter to continue');
                     x = input();
@@ -40,9 +40,9 @@ class SAT_solver:
             
             
             if(self.DEBUG):
-                print('Problem complexity after simplification: %d'%complexity(self.SAT_problem));
+                print('Problem complexity after simplification: %d'%complexity(self.CNF_SAT_Problem));
                 if('p' in x):
-                    print(self.SAT_problem);
+                    print(self.CNF_SAT_Problem);
                 if('a' in x):
                     ass_print(self.Assignments);
                 if('c' in x):
@@ -50,7 +50,7 @@ class SAT_solver:
                 if('n' in x):
                     self.ASK = False;
                     
-            if(not self.SAT_problem.Clauses):
+            if(not self.CNF_SAT_Problem.Clauses):
                 return True; #Problem Solved
             
             if(self.Assign_Units()):
@@ -65,10 +65,10 @@ class SAT_solver:
             #the one that appears the most (?) will be chosen
             
             new_guess = Guess();
-            new_guess.Sentence_Before = copy.deepcopy(self.SAT_problem);
+            new_guess.Sentence_Before = copy.deepcopy(self.CNF_SAT_Problem);
             new_guess.Assignments_Before = copy.deepcopy(self.Assignments);
             
-            for i in range(self.SAT_problem.N_Vars):
+            for i in range(self.CNF_SAT_Problem.N_Vars):
                 if(self.Assignments[i] == None):
                     new_guess.Lit_ID = i;
                     new_guess.Tried[False] = True;
@@ -89,7 +89,7 @@ class SAT_solver:
             return False;
         
         rem_clauses = [];
-        for Clause in self.SAT_problem.Clauses:
+        for Clause in self.CNF_SAT_Problem.Clauses:
             rem_lits = [];
             for lit in Clause:
                 if(self.Assignments[lit.ID] == None):
@@ -106,7 +106,7 @@ class SAT_solver:
                 return False;
         
         for rem_clause in rem_clauses:
-            self.SAT_problem.Clauses.remove(rem_clause);
+            self.CNF_SAT_Problem.Clauses.remove(rem_clause);
         return True;
         
     #Removes contradicting literals in a clause
@@ -117,7 +117,7 @@ class SAT_solver:
     #because it guarantees that each clause only has one of each kind
     #of literals
     def Pre_Simplify(self): 
-        for Clause in self.SAT_problem.Clauses:
+        for Clause in self.CNF_SAT_Problem.Clauses:
             
             finished = False;
             while(not finished):
@@ -152,7 +152,7 @@ class SAT_solver:
     def Assign_Units(self):
         ret = False;
         Clauses_to_Remove = [];
-        for Clause in self.SAT_problem.Clauses:
+        for Clause in self.CNF_SAT_Problem.Clauses:
             if(len(Clause) == 1):
                 ret = True;
                 unit_lit = Clause[0];
@@ -165,14 +165,14 @@ class SAT_solver:
         if(self.DEBUG and bool(Clauses_to_Remove)):
             print('Unit clauses found: %s'%Clauses_to_Remove);
         for Clause_to_Remove in Clauses_to_Remove:
-            self.SAT_problem.Clauses.remove(Clause_to_Remove);
+            self.CNF_SAT_Problem.Clauses.remove(Clause_to_Remove);
         return ret;
 
     #Look for pure symbols and assign them
     def Assign_Pure(self):
-        Literals = [Literal_Info() for i in range(self.SAT_problem.N_Vars)];
+        Literals = [Literal_Info() for i in range(self.CNF_SAT_Problem.N_Vars)];
         
-        for Clause in self.SAT_problem.Clauses:
+        for Clause in self.CNF_SAT_Problem.Clauses:
             for lit in Clause:
                 if(Literals[lit.ID].PureAffirm==None):
                     Literals[lit.ID].PureAffirm = lit.Affirm;
@@ -186,14 +186,14 @@ class SAT_solver:
                     Literals[lit.ID].N_Appear = -1;
         
         ret = False;
-        for ind in range(self.SAT_problem.N_Vars):
+        for ind in range(self.CNF_SAT_Problem.N_Vars):
             if(Literals[ind].N_Appear > 0):
                 self.Assignments[ind] = Literals[ind].PureAffirm;
                 ret = True;
         
         if(self.DEBUG and ret):
             S = 'Pure literals found: ';
-            for ind in range(self.SAT_problem.N_Vars):
+            for ind in range(self.CNF_SAT_Problem.N_Vars):
                 if(Literals[ind].N_Appear > 0):
                     S += '%s '%Literal(ind, Literals[ind].PureAffirm);
             print(S);
@@ -210,12 +210,12 @@ class SAT_solver:
                 this_Guess.Tried[Untried] = True;
                 self.Assignments = this_Guess.Assignments_Before;
                 self.Assignments[this_Guess.Lit_ID] = bool(Untried);
-                self.SAT_problem = this_Guess.Sentence_Before;
+                self.CNF_SAT_Problem = this_Guess.Sentence_Before;
                 self.Guesses.append(this_Guess);
                 self.Unsolvable = False;
                 if(self.DEBUG):
                     print('Guesses list: %s'%self.Guesses);
-                    print('Complexity of recovered state: %d'%complexity(self.SAT_problem));
+                    print('Complexity of recovered state: %d'%complexity(self.CNF_SAT_Problem));
                 return True;
             #~ else:
                 #~ self.Assignments[this_Guess.Lit_ID] = None;
