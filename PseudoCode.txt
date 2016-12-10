@@ -1,27 +1,16 @@
-for all specific relations:
-	for all action names:
-        For every precondition:
-            collect the argument assignment, if any, that makes this precondition equal the specific relation
+for all actions&assignments:
+    record in the general relations the action/relative assignment that makes it be a precondition or an effect
 
-    each of those argument assignments for every action name will produce a DNF clause.
-    Negate them all, and add the specific relation, and we get a CNF "action implies precondition" clause.
+create a list of all possible action&assignments in the format received by the Quine_McCluskey algorithm
 
-
-for all specific relations:
-	for all action names:
-        For every effect:
-            collect the argument assignment, if any, that makes this effect equal the specific relation
+for all specific relations (affirmed or negated):
+    produce from the relative assignments, the absolute assignments that make it a precondition or effect
     
-    each of those argument assignments for every action name will produce a DNF clause. (After conversion)
+    create the action implies precondition, and action implies effect clauses
     
-    For each of those clauses_
-        Negate all literals, and add the specific relation (in the next time step), and we get a CNF "action implies effect" clause.
     
-    For every possible combination of selections from these DNF clauses, create a CNF clause, and collect it in a set (no repetitions)
-    To the resulting sentence, apply simplification procedure similar to SAT_solver
+    copy the initially created list
+    for all the actions that make this specific relation an effect, remove them from said list
     
-
-
-
 
 If a specific relation is not the effect of any possible action, its 2 frame axiom clauses simply state that it does not change

@@ -8,7 +8,7 @@ fh = open(sys.argv[1],'r');
 ThisProblem = problem(fh);
 
 
-Solved = True;
+Solved = False;
 horz = 1;
 while(horz<5):
     ThisProblem.set_horizon(horz);
