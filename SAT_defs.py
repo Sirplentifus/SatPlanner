@@ -1,3 +1,6 @@
+import copy;
+import pdb;
+
 class Literal:
     def __init__(self, ID=-1, Affirm=None):
         self.ID = ID;
@@ -35,6 +38,14 @@ class SAT_Sentence:
            S+= ' and %d distinct literals'%(self.N_Vars);
         
         return S;
+    
+    def __copy__(self):
+        ret = SAT_Sentence();
+        ret.N_Vars = self.N_Vars;
+        ret.Clauses = [];
+        for Clause in self.Clauses:
+            ret.Clauses.append(copy.copy(Clause));
+        return ret;
         
 def complexity(SAT_phrase):
     ret = 0;

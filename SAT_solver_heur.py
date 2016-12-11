@@ -72,8 +72,8 @@ class SAT_solver_heur:
             #
             
             new_guess = Guess();
-            new_guess.Sentence_Before = copy.deepcopy(self.CNF_SAT_Problem);
-            new_guess.Assignments_Before = copy.deepcopy(self.Assignments);
+            new_guess.Sentence_Before = copy.copy(self.CNF_SAT_Problem);
+            new_guess.Assignments_Before = copy.copy(self.Assignments);
             
             #Update heuristic
             heur_vals = self.Count_Literals();

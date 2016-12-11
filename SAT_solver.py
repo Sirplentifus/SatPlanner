@@ -5,7 +5,7 @@ import pdb;
 
 class SAT_solver:
     def __init__(self, CNF_SAT_Problem):
-        self.CNF_SAT_Problem = copy.deepcopy(CNF_SAT_Problem);
+        self.CNF_SAT_Problem = copy.copy(CNF_SAT_Problem);
         self.Assignments = [None]*CNF_SAT_Problem.N_Vars;
         
         self.Guesses = []; #List of literals representing assignments made in branches
@@ -65,7 +65,7 @@ class SAT_solver:
             #the one that appears the most (?) will be chosen
             
             new_guess = Guess();
-            new_guess.Sentence_Before = copy.deepcopy(self.CNF_SAT_Problem);
+            new_guess.Sentence_Before = copy.copy(self.CNF_SAT_Problem);
             new_guess.Assignments_Before = copy.copy(self.Assignments);
             
             for i in range(self.CNF_SAT_Problem.N_Vars):
