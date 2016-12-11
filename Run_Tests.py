@@ -21,7 +21,7 @@ for file_name in File_Names:
 
     Solved = False;
     horz = 1;
-    while(horz<5):
+    while(horz<=7):
         ThisProblem.set_horizon(horz);
         Solver = SAT_solver(ThisProblem.Total_Statement);
         if(Solver.Solve()):

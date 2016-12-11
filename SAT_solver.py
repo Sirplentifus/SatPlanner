@@ -66,7 +66,7 @@ class SAT_solver:
             
             new_guess = Guess();
             new_guess.Sentence_Before = copy.deepcopy(self.CNF_SAT_Problem);
-            new_guess.Assignments_Before = copy.deepcopy(self.Assignments);
+            new_guess.Assignments_Before = copy.copy(self.Assignments);
             
             for i in range(self.CNF_SAT_Problem.N_Vars):
                 if(self.Assignments[i] == None):

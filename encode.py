@@ -216,7 +216,7 @@ class problem:
         self.N_lits_t = self.N_rels+self.N_acts+self.N_args*self.N_vars;
     
     def prepare_init_statements(self):
-                
+        
         #Creating general information for what actions require or effect the relation
         for rel_name in self.Relations:
             rel = self.Relations[rel_name];

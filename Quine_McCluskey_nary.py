@@ -1,4 +1,6 @@
-#Inspired by the Quine_McCl
+#Inspired by the Quine McCluskey algorithm, as implemented in 
+#http://stackoverflow.com/a/11454049/1577940, but generalized to work
+#n-ary variables, instead of just binary (or boolean) ones.
 
 import copy;
 import pdb;
@@ -26,7 +28,9 @@ class QM:
                     
                 self.Clauses.add(Clause);
     
-    #Expands all clauses, removing all "any"s. 
+    #Expands all clauses, removing all clauses with "any"s, and inserting
+    #clauses with those any's filled with all possible combinations of
+    #values
     def expand(self):
         
         new_Clauses = set();
@@ -76,13 +80,17 @@ class QM:
     #expected to happen ever
     def compare(self, Clause1, Clause2):
         diffs = [];
+        N = 0;
         for i in range(len(self.Arities)):
             if(Clause1[i] != Clause2[i]):
+                if(N>=1):
+                    return None;
                 diffs.append(i);
-        
-        if(len(diffs) == 0):
+                N+=1;
+                
+        if(N == 0):
             raise(ValueError('Two equal clauses!?!?!?!'));
-        elif(len(diffs) == 1):
+        elif(N == 1):
             return diffs[0];
         else:
             return None;
@@ -92,7 +100,6 @@ class QM:
         
         Clauses_by_grouping = [self.Clauses]; #List of sets
         
-        Done = False;
         while( Clauses_by_grouping[-1] ):
             
             Clauses_by_grouping.append(set());
@@ -113,16 +120,13 @@ class QM:
                 for j in range(len(self.Arities)):
                     if(len(Similars[j]) == self.Arities[j]-1 and self.Arities[j]!=1): #Unary variables can lead to repeatedly combining one variable, making this program never end
                         
-                        DBG_aux = [ Clauses_temp[n] for n in (Similars[j]+[i]) ];
-                        
                         Clauses_by_grouping[-2].difference_update( [ Clauses_temp[n] for n in (Similars[j]+[i]) ] );
                         
                         To_Add = list(Clauses_temp[i]);
                         To_Add[j] = -1;
                         Clauses_by_grouping[-1].add(tuple(To_Add));
                 
-        self.Clauses = set();
-        for cause_group in Clauses_by_grouping:
+        for cause_group in Clauses_by_grouping[1:]:
             self.Clauses.update(cause_group);
         
 

@@ -9,7 +9,7 @@ class SAT_solver_heur:
         self.Assignments = [None]*CNF_SAT_Problem.N_Vars;
         
         self.Guesses = []; #List of literals representing assignments made in branches
-        self.DEBUG = True;
+        self.DEBUG = False;
         self.ASK = False;
         
         self.Unsolvable = False; 
