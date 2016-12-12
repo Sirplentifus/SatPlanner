@@ -246,10 +246,17 @@ class SAT_solver_heur:
     def Count_Literals(self):
         Literals = [Literal_Info() for i in range(self.CNF_SAT_Problem.N_Vars)];
 
+        #First part of the heuristic
         for Clause in self.CNF_SAT_Problem.Clauses:
             for lit in Clause:
                 if (not lit.Affirm):
-                    Literals[lit.ID].N_Appear += 1;
+                    Literals[lit.ID].N_Appear += 1
+
+        #Second part - count specifically the learned clauses
+        for Clause in self.learned_clauses.Clauses:
+            for lit in Clause:
+                if (not lit.Affirm):
+                    Literals[lit.ID].N_Appear += self.LEARN_WEIGHT
 
         return Literals
 
