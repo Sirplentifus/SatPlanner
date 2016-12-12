@@ -244,18 +244,20 @@ class SAT_solver_heur:
         return ret
 
     def Count_Literals(self):
-        Literals = [Literal_Info() for i in range(self.CNF_SAT_Problem.N_Vars)];
+        Literals = [Literal_Info() for i in range(self.CNF_SAT_Problem.N_Vars)]
 
-        #First part of the heuristic
+        # First part of the heuristic
         for Clause in self.CNF_SAT_Problem.Clauses:
             for lit in Clause:
-                if (not lit.Affirm):
+                if not lit.Affirm:
                     Literals[lit.ID].N_Appear += 1
 
-        #Second part - count specifically the learned clauses
+        # Second part - count specifically the learned clauses
         for Clause in self.learned_clauses.Clauses:
             for lit in Clause:
-                if (not lit.Affirm):
+                # Learned clauses list is NOT simplified, so we must
+                # ensure that the variable has not been assigned
+                if (not lit.Affirm and self.Assignments[lit.ID] == None):
                     Literals[lit.ID].N_Appear += self.LEARN_WEIGHT
 
         return Literals
@@ -268,7 +270,7 @@ class SAT_solver_heur:
             lit_val = self.Assignments[i.Lit_ID]
             lit_i = Literal(i.Lit_ID, lit_val)
             new_clause.append(lit_i)
-        
+
         # Insert the new clause into the problem and into the learned clauses list
         self.CNF_SAT_Problem.Clauses.append(new_clause)
         self.learned_clauses.Clauses.append(new_clause)
@@ -289,45 +291,43 @@ class SAT_solver_heur:
                 if(self.DEBUG):
                     print('Guesses list: %s'%self.Guesses)
                     print('Complexity of recovered state: %d'%complexity(self.CNF_SAT_Problem));
-                return True;
+                return True
             #~ else:
                 #~ self.Assignments[this_Guess.Lit_ID] = None;
                 #~ continue;
-        
-        return False;
-        
-        
-    
-#Useful class to keep general info on the literals
+
+        return False
+
+# Useful class to keep general info on the literals
 class Literal_Info:
-    N_Appear = 0; #Num of clauses it appears in. Negative if impure
-    PureAffirm = None; #This pure literal has which affirm
-    
-    #For debugging:
+    N_Appear = 0 # Num of clauses it appears in. Negative if impure
+    PureAffirm = None # This pure literal has which affirm
+
+    # For debugging:
     def __repr__(self):
         if(self.N_Appear < 0):
-            return '<Impure>';
-        else:    
+            return '<Impure>'
+        else:
             return '<%s,%d>'%(self.PureAffirm, self.N_Appear);
 
-#Class that maintains info on guesses made
+
+# Class that maintains info on guesses made
 class Guess:
     def __init__(self):
-        self.Lit_ID = -1;
-        self.Tried = [False]*2;
-        self.Sentence_Before = SAT_Sentence();
-        self.Assignments_Before = [];
-    
-    #For debugging:
-    def __repr__(self):
-        return '<%d, %s>'%(self.Lit_ID+1, self.Tried);
+        self.Lit_ID = -1
+        self.Tried = [False]*2
+        self.Sentence_Before = SAT_Sentence()
+        self.Assignments_Before = []
 
+    # For debugging:
+    def __repr__(self):
+        return '<%d, %s>'%(self.Lit_ID+1, self.Tried)
 
 
 def ass_print(assignments):
-    ass_L = len(assignments);
-    L = ass_L//10;
+    ass_L = len(assignments)
+    L = ass_L//10
     if( ass_L%10 ):
-        L+=1;
+        L+=1
     for i in range(L):
         print('(%d-%d) - %s'%(i*10+1,min(i*10+10,ass_L),assignments[i*10:min(i*10+10,ass_L)]));
