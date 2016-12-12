@@ -5,7 +5,7 @@ import pdb;
 
 class SAT_solver:
     def __init__(self, CNF_SAT_Problem):
-        self.CNF_SAT_Problem = copy.copy(CNF_SAT_Problem);
+        self.CNF_SAT_Problem = CNF_SAT_Problem;
         self.Assignments = [None]*CNF_SAT_Problem.N_Vars;
         
         self.Guesses = []; #List of literals representing assignments made in branches
@@ -127,7 +127,7 @@ class SAT_solver:
                     
                     if(eq_lits):
                         finished = False;
-                        pdb.set_trace();
+                        #~ pdb.set_trace();
                         
                     delete_all_eqs = False;
                     for eq_lit in eq_lits:

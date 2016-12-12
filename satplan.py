@@ -1,8 +1,15 @@
 from encode import *;
-from SAT_solver import *;
+
 import pdb;
 
-DEBUG = True;
+DEBUG = False;
+Heuristics = True;
+
+if(Heuristics):
+    from SAT_solver_heur import *;
+else:
+    from SAT_solver import *;
+    
 
 fh = open(sys.argv[1],'r');    
 ThisProblem = problem(fh);
@@ -21,7 +28,10 @@ horz = 1;
 while(horz<=7):
     print('Now trying h=%d'%horz);
     ThisProblem.set_horizon(horz);
-    Solver = SAT_solver(ThisProblem.Total_Statement);
+    if(Heuristics):
+        Solver = SAT_solver_heur(ThisProblem.Total_Statement);
+    else:
+        Solver = SAT_solver(ThisProblem.Total_Statement);
     if(Solver.Solve()):
         Solved = True;
         break;

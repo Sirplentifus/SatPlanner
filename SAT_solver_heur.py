@@ -5,16 +5,18 @@ import pdb
 
 class SAT_solver_heur:
     def __init__(self, CNF_SAT_Problem):
-        self.CNF_SAT_Problem = copy.deepcopy(CNF_SAT_Problem)
-        # learned_clauses keeps track of the learned clauses
-        # These are also added to the SAT problem, but we keep track of
-        # them separately to minimize code changes while still allowing 
+        self.CNF_SAT_Problem = CNF_SAT_Problem;
+        #learned_clauses keeps track of the learned clauses
+        #These are also added to the SAT problem, but we keep track of
+        #them separately to minimize code changes while still allowing 
         # heuristics to know that these clauses were learned during execution
         self.learned_clauses = SAT_Sentence()
         self.Assignments = [None]*CNF_SAT_Problem.N_Vars
-
-        self.Guesses = []  # List of literals representing assignments made in branches
-
+        
+        self.Guesses = [] #List of literals representing assignments made in branches
+        self.DEBUG = False
+        self.ASK = False
+        
         self.Unsolvable = False
 
         self.Pre_Simplify()
@@ -165,10 +167,10 @@ class SAT_solver_heur:
                     eq_lits = [x for x in Clause if x.ID == lit.ID and (not x is lit)]
 
                     if(eq_lits):
-                        finished = False
-                        pdb.set_trace()
-
-                    delete_all_eqs = False
+                        finished = False;
+                        #~ pdb.set_trace();
+                        
+                    delete_all_eqs = False;
                     for eq_lit in eq_lits:
                         if(eq_lit.Affirm != lit.Affirm):
                             delete_all_eqs = True
