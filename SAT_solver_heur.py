@@ -5,16 +5,23 @@ import pdb;
 
 class SAT_solver_heur:
     def __init__(self, CNF_SAT_Problem):
+
         self.CNF_SAT_Problem = CNF_SAT_Problem;
-        self.Assignments = [None]*CNF_SAT_Problem.N_Vars;
+        #learned_clauses keeps track of the learned clauses
+        #These are also added to the SAT problem, but we keep track of
+        #them separately to minimize code changes while still allowing 
+        # heuristics to know that these clauses were learned during execution
+        self.learned_clauses = SAT_Sentence()
+        self.Assignments = [None]*CNF_SAT_Problem.N_Vars
+
         
-        self.Guesses = []; #List of literals representing assignments made in branches
-        self.DEBUG = False;
-        self.ASK = False;
+        self.Guesses = [] #List of literals representing assignments made in branches
+        self.DEBUG = False
+        self.ASK = False
         
-        self.Unsolvable = False; 
+        self.Unsolvable = False
         
-        self.Pre_Simplify();
+        self.Pre_Simplify()
     
     #Applies a version of the DPLL algorithm to solve the problem
     #Returns False if impossible and True if solved
@@ -245,13 +252,26 @@ class SAT_solver_heur:
     
     #Backs up until the last guess that still has an untried option
     def BackTrack(self):
+        #Start by learning the conflict clause
+        new_clause = []
+        for i in range(0, len(self.Assignments) - 1):
+            if self.Assignments[i] != None:
+                    #We're learning NOT (xi AND ... AND xj) for all assigned x
+                    #This is equivalent to (NOT xi OR ... OR NOT xj), from
+                    # deMorgan's Laws, which is a CNF clause
+                    lit_i = Literal(i, not self.Assignments[i])
+                    new_clause.append(lit_i)
+        #Insert the new clause into the problem and into the learned clauses list
+        self.CNF_SAT_Problem.Clauses.append(new_clause)
+        self.learned_clauses.Clauses.append(new_clause)
+
         while(self.Guesses):
             this_Guess = self.Guesses.pop();
             #Determine which guess, if any, is left.
             #If none are left, we pop another
             Untried = [a for a in this_Guess.Tried if this_Guess.Tried[a]==False];
-            if(Untried):
-                Untried = Untried[0];
+            if(Untried):               
+                Untried = Untried[0];              
                 this_Guess.Tried[Untried] = True;
                 self.Assignments = this_Guess.Assignments_Before;
                 self.Assignments[this_Guess.Lit_ID] = bool(Untried);
