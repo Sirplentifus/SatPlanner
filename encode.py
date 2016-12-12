@@ -60,7 +60,7 @@ class Action: #Information about an action in the general sense
         return '\tNum_of_args: %d\n\tPreconditions: %s\n\tEffects: %s\n\tInd: %d'%(self.Num_of_args, self.Precond, self.Effects, self.Ind);
         
 class Atom: #Represents a specific relation or action
-    def __init__(self, string):
+    def __init__(self, string=''):
         self.Name = '';
         self.Variables = []; #Strings for actual variable names, ints for when they are to index some list
         self.affirm = None; #True if affirmed, False if negated
@@ -226,17 +226,24 @@ class problem:
                 
                 for precond in act.Precond:
                     if(precond.Name == rel_name):
-                        new_atom = copy.deepcopy(precond);
+                        new_atom = Atom();
                         new_atom.Name = act_name;
+                        new_atom.Variables = precond.Variables;
+                        new_atom.affirm = precond.affirm;
+                        #~ new_atom = copy.deepcopy(precond);
+                        #~ new_atom.Name = act_name;
                         rel.Precond.append(new_atom);
                         
                 for effect in act.Effects:
                     if(effect.Name == rel_name):
-                        new_atom = copy.deepcopy(effect);
+                        new_atom = Atom();
                         new_atom.Name = act_name;
+                        new_atom.Variables = effect.Variables;
+                        new_atom.affirm = effect.affirm;
+                        #~ new_atom = copy.deepcopy(effect);
+                        #~ new_atom.Name = act_name;
                         rel.Effects.append(new_atom);
         
-            
     def init_state_statements(self):
         #At init all possible lits are negated, except if they're 
         #present in self.InitialState
@@ -277,7 +284,7 @@ class problem:
                 #Make a list of all the specific actions (in the form of atoms) that require this rel
                 acts_precond = [];
                 for precond in rel.Precond:
-                    new_atom = copy.deepcopy(precond);
+                    new_atom = copy.copy(precond);
                     if(new_atom.replace_args(var_inds, self.Actions[new_atom.Name].Num_of_args, self.Variables)):
                         acts_precond.append(new_atom);
                 #Remove redundancies, or forbid the action if impossible. TODO
@@ -285,14 +292,12 @@ class problem:
                 #Make a list of all the specific actions (in the form of atoms) that effect this rel
                 acts_effects = [];
                 for effect in rel.Effects:
-                    new_atom = copy.deepcopy(effect);
+                    new_atom = copy.copy(effect);
                     if(new_atom.replace_args(var_inds, self.Actions[new_atom.Name].Num_of_args, self.Variables )):
                         acts_effects.append(new_atom);
-                    
-                    #Turn this into something compatible with Quine_McClukey, and remove from copied initial list. TODO
-                    
                 #Remove redundancies, or forbid the action if impossible. TODO
                 
+                #~ pdb.set_trace();
                 
                 #Create action implies precondition clauses
                 for precond in acts_precond:
@@ -318,12 +323,12 @@ class problem:
                 for affirm_state in [False,True]:
                     actions_with_no_effect[affirm_state].simplify();
                 
-                #Converting to SAT_Sentence
+                #Converting actions_with_no_effect to SAT_Sentence
                 for affirm_state in [False,True]:
                     for action in actions_with_no_effect[affirm_state].Clauses:
                         Base_Clause = self.Act2Clause(action);
                         Literal_Now = Literal(rel_ID, not affirm_state);
-                        Literal_After = copy.deepcopy(Literal_Now);
+                        Literal_After = copy.copy(Literal_Now);
                         Literal_After.ID += self.N_lits_t;
                         Literal_Now.Affirm = not Literal_Now.Affirm;
                         self.Frame_Statement.Clauses.append([Literal_Now] + Base_Clause + [Literal_After]);
@@ -346,26 +351,7 @@ class problem:
             for i in range(self.N_vars):
                 for j in range(i+1, self.N_vars):
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
-            self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);     
-    
-    #Removes repeated literals, or everything in the list if 
-    #contradicting literals are present.
-    def simplify( self, lit_list ):
-        lits_to_remove = [];
-        
-        for lit in lit_list:
-            same_lits = [ l for l in lit_list if (l.ID == lit.ID) and (not l is lit) ];
-            cont_lits = [ l for l in same_lits if l.Affirm != lit.Affirm ];
-            
-            if(cont_lits):
-                lit_list = [];
-                return lit_list;
-                
-            lits_to_remove += same_lits;
-            
-        for lit in lits_to_remove:
-            lit_list.remove(lit);
-        return lit_list;
+            self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);
             
     def set_horizon(self, h):
         self.h = h;
