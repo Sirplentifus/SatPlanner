@@ -5,7 +5,7 @@ import pdb
 
 class SAT_solver_heur:
     def __init__(self, CNF_SAT_Problem):
-        self.CNF_SAT_Problem = CNF_SAT_Problem;
+        self.CNF_SAT_Problem = CNF_SAT_Problem
         #learned_clauses keeps track of the learned clauses
         #These are also added to the SAT problem, but we keep track of
         #them separately to minimize code changes while still allowing 
@@ -253,12 +253,12 @@ class SAT_solver_heur:
                     Literals[lit.ID].N_Appear += 1
 
         # Second part - count specifically the learned clauses
-        for Clause in self.learned_clauses.Clauses:
-            for lit in Clause:
+        #for Clause in self.learned_clauses.Clauses:
+         #   for lit in Clause:
                 # Learned clauses list is NOT simplified, so we must
                 # ensure that the variable has not been assigned
-                if (not lit.Affirm and self.Assignments[lit.ID] == None):
-                    Literals[lit.ID].N_Appear += self.LEARN_WEIGHT
+          #      if (not lit.Affirm and self.Assignments[lit.ID] == None):
+           #         Literals[lit.ID].N_Appear += self.LEARN_WEIGHT
 
         return Literals
 
@@ -273,7 +273,7 @@ class SAT_solver_heur:
 
         # Insert the new clause into the problem and into the learned clauses list
         self.CNF_SAT_Problem.Clauses.append(new_clause)
-        self.learned_clauses.Clauses.append(new_clause)
+        #self.learned_clauses.Clauses.append(new_clause)
 
         while(self.Guesses):
             this_Guess = self.Guesses.pop()
