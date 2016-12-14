@@ -4,7 +4,7 @@ import pdb;
 import time;
 
 from encode import *;
-from SAT_solver_heur import *;
+from SAT_solver_VSIDS import *;
 
 TestsFolder = './Tests/';
 
@@ -27,7 +27,7 @@ for file_name in File_Names:
     horz = 1;
     while(horz<=7):
         ThisProblem.set_horizon(horz);
-        Solver = SAT_solver_heur(ThisProblem.Total_Statement);
+        Solver = SAT_solver_VSIDS(ThisProblem.Total_Statement);
         if(Solver.Solve()):
             Solved = True;
             break;
