@@ -5,6 +5,11 @@ from SAT_defs import *
 
 from SAT_solver_VSIDS import *; #Choose between SAT_solver_VSIDS, SAT_solver_heur, or SAT_solver. SAT_solver_VSIDS is the fastest solver we've made
 
+if len(sys.argv) < 2:
+    print('Correct usage: satplan.py <filename>')
+    exit()
+
+
 DEBUG = False; #If true, produces certain output to stdout and to files in folder Dump (must exist)    
 
 fh = open(sys.argv[1],'r');    
