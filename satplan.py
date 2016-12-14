@@ -1,4 +1,5 @@
 from encode import *;
+from SAT_defs import *
 
 import pdb;
 

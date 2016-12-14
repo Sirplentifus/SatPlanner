@@ -20,6 +20,8 @@ class SAT_solver_VSIDS:
 
         self.Pre_Simplify()
 
+        self.nvars = self.CNF_SAT_Problem.N_Vars
+
         # We don't need to calculate the heuristic on every branch,
         # just update it
         self.persistent_heuristic = [0]*self.CNF_SAT_Problem.N_Vars
@@ -46,6 +48,8 @@ class SAT_solver_VSIDS:
     # Returns False if impossible and True if solved
     def Solve(self):
 
+       
+            
         while True:
 
             if self.DEBUG:
@@ -328,6 +332,8 @@ class SAT_solver_VSIDS:
                 return rnd_no
 
         # Choose the greatest unassigned value
+        unassigned_lits = [i in range(len(self))]
+
         chosen_lit = 0
         max_heur = self.persistent_heuristic[0]
         for i in range(1, len(self.persistent_heuristic)):
@@ -352,7 +358,7 @@ class SAT_solver_VSIDS:
                     lit_val = self.Assignments[i.Lit_ID]
                     lit_i = Literal(i.Lit_ID, lit_val)
                     new_clause.append(lit_i)
-        else:           
+        else:
             new_clause = []
             for i in self.Guesses:
                 lit_val = self.Assignments[i.Lit_ID]
