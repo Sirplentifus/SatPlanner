@@ -12,8 +12,6 @@
 #ith argument taken by the action (e.g. arg1_A, arg1_B, arg2_B, etc...)
 
 import re; #Regular expressions. Just to facilitate reading the file
-#~ import pdb;
-#~ from collections import OrderedDict; 
 import copy;
 from Quine_McCluskey_nary import *
 
@@ -51,7 +49,6 @@ class Action: #Information about an action in the general sense
     def append(self, new_atom, whichset):
         
         #Converting variables to numbers
-        #~ for var in new_atom.Variables:
         for i in range(len(new_atom.Variables)):
             var = new_atom.Variables[i];
             varind = [j for j in range(len(self.Vars)) if self.Vars[j]==var];
@@ -59,7 +56,6 @@ class Action: #Information about an action in the general sense
             if(len(varind)==0):
                 pass;
             elif(len(varind)==1):
-                #~ ins_atom.Variables.append(varind[0]);
                 new_atom.Variables[i] = varind[0];
             else:
                 raise(ValueError('Var %s was found %d times in %s'%(var, len(varind), self.Vars)));
@@ -297,7 +293,7 @@ class problem:
         #For every specific relation
         for rel_name in self.Relations:
             rel = self.Relations[rel_name];
-            #~ pdb.set_trace();
+            
             #Combination of arguments seen as a number of base self.N_vars
             for arg_comb_num in range(self.N_vars**rel.Num_of_vars):
                 
@@ -402,16 +398,17 @@ class problem:
                     At_Most_One_Clause.append( [Literal(self.N_rels+self.N_acts+k*self.N_vars+i,False), Literal(self.N_rels+self.N_acts+k*self.N_vars+j,False)] );
             self.Exclusive_Statement.Clauses += ([At_Least_One_Clause] + At_Most_One_Clause);
     
-    
+    #Besides recording the new horizon, this method also constructs
+    #The full SAT sentence that expresses this problem for a given horizon
     def set_horizon(self, h):
         self.h = h;
         self.N_lits = self.N_lits_t*self.h + self.N_rels;
         
-        #Introducting the Initial state clauses
+        #Introducing the Initial state clauses
         self.Total_Statement = copy.deepcopy(self.Init_Statement);
         self.Total_Statement.N_Vars = self.N_lits;
         
-        #Introducting the Goal state clauses, all shifted to the horizon
+        #Introducing the Goal state clauses, all shifted to the horizon
         for Clause in self.Goal_Statement.Clauses:
             New_Clause = [];
             for Lit in Clause:
@@ -459,7 +456,7 @@ class problem:
         
         return ret;
     
-    #This method translates An_Atom, wich can be in the form of a Atom
+    #This method translates An_Atom, wich can be in the form of an Atom
     #object, or a tuple (to work with QM), into a sequence of clauses
     #for the action type and each of the arguments
     def Act2Clause(self, An_Atom):
@@ -542,7 +539,7 @@ class problem:
         return S;
     
     
-    #Older code. Unused except in tests, when Factoring is set to False:
+    #Older code. Unused except when Factoring is set to False:
     
     def init_action_statements_no_factoring(self):
            
@@ -596,7 +593,7 @@ class problem:
                     except ValueError:
                         pass; # Sometimes effects get doubled
                 
-                #~ #Introducing the frame axioms    
+                #Introducing the frame axioms    
                 for rel_ID in rel_IDs:
                     for affirm_state in [False, True]:
                         Literal_Now = Literal(rel_ID, affirm_state);

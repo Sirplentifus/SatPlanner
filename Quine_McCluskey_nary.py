@@ -3,12 +3,19 @@
 #n-ary variables, instead of just binary (or boolean) ones. Very little,
 #if any, of his original code remains.
 
+#From hereon, in the code and comments, the "arity" of a variable is the
+#number of possible values it may have, besides -1, which stands for an
+#"any", or in other words, a variable that could be any option and still
+#make a true clause. In a SAT representation of a clause, the "anys" would
+#be ommited
+
 import copy;
-import pdb;
 import pprint;
 
 class QM:
     
+    #Initialize QM object. If Clauses are absent, it creates all possible
+    #clauses for these variables.
     def __init__(self, Arities, Clauses=None):
         self.Arities = Arities; #Defines the arities of each variable
         self.Clauses = set(); #set of tuples of ints. -1 represents "any"
@@ -69,11 +76,14 @@ class QM:
                     
         self.Clauses = new_Clauses;
     
+    #Removes Clauses. self must have no clauses with "anys".
     def remove(self, Clauses): #Clauses must be a list of tuples
         aux = QM(self.Arities, Clauses);
         aux.expand();
         self.Clauses.difference_update(aux.Clauses);
     
+    #Joins a series of QM objects. The first variable represents from
+    #which QM object a clause came from
     def join(self, QM_list):
         j = 0;
         for QM_object in QM_list:
@@ -126,8 +136,6 @@ class QM:
         
     def simplify(self):
         
-        #~ pdb.set_trace();
-        
         Clauses_by_grouping = [set() for i in range(len(self.Arities)+1)]; #List of sets
         
         for Clause in self.Clauses:
@@ -168,15 +176,3 @@ class QM:
         for cause_group in Clauses_by_grouping:
             self.Clauses.update(cause_group);
         
-
-#~ a = QM([2,4,4,4]);
-#~ a.Clauses.add( (1,2) );
-#~ a.Clauses.add( (1,2) );
-#~ a.Clauses.add( (-1,1) );
-#~ a.Clauses.add( (-1,-1) );
-
-#~ a.expand();
-#~ a.remove( [[0]] );
-#~ a.Clauses.add( (0,0,0,0) );
-#~ a.simplify();
-#~ pprint.pprint((a.Clauses));

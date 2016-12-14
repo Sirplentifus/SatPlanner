@@ -179,7 +179,6 @@ class SAT_solver:
 
                     if(eq_lits):
                         finished = False
-                        #~ pdb.set_trace()
 
                     delete_all_eqs = False
                     for eq_lit in eq_lits:
@@ -211,7 +210,6 @@ class SAT_solver:
                 if(self.Assignments[unit_lit.ID] == (not unit_lit.Affirm)):  # WARNING: not None evaluates to True
                     self.Unsolvable = True
                     return True
-                    pdb.set_trace()
                 self.Assignments[unit_lit.ID] = unit_lit.Affirm
                 Clauses_to_Remove.append(Clause)
         if(self.DEBUG and bool(Clauses_to_Remove)):

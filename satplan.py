@@ -3,8 +3,6 @@ import sys;
 from encoder import *;
 from SAT_defs import *
 
-import pdb;
-
 from SAT_solver_VSIDS import *; #Choose between SAT_solver_VSIDS, SAT_solver_heur, or SAT_solver. SAT_solver_VSIDS is the fastest solver we've made
 
 DEBUG = True; #If true, produces certain output to stdout and to files in folder Dump (must exist)    
