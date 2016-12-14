@@ -1,6 +1,7 @@
 from SAT_defs import *
 import copy
 import pdb
+import random
 
 
 class SAT_solver_VSIDS:
@@ -28,8 +29,12 @@ class SAT_solver_VSIDS:
         self.ASK = False
         self.NEW_CLAUSE_WEIGHT = 0.05  # New clauses are weighted by 1+x% more than old ones
         self.INIT_HEUR = 0.0009765625  # We start low to better use a float's dynamic range
-        self.LIMIT_LEARN_CLAUSE_LEN = True
+        self.LIMIT_LEARN_CLAUSE_LEN = True  # Significant speedups
         self.MAX_LEARN_CLAUSE_LEN = 4  # 4 seems optimal
+        self.TRY_RANDOM_CHOICE = False  # Does not seem to help currently
+        self.RANDOM_CHOICE_LKHD = 2     # Given in units compatible with the range
+        self.RANDOM_RANGE_START = 1
+        self.RANDOM_RANGE_END   = 100
 
         # Tunable init
         self.curr_heur_val = self.INIT_HEUR
@@ -118,14 +123,14 @@ class SAT_solver_VSIDS:
                     # self.Assignments[i] = False;
                     # break;
 
-            self.Guesses.append(new_guess);
+            self.Guesses.append(new_guess)
             if(self.DEBUG):
-                print('No units or literals found - branching: %s'%new_guess);
-                print('Full tree:%s'%self.Guesses);
+                print('No units or literals found - branching: %s'%new_guess)
+                print('Full tree:%s'%self.Guesses)
 
-    #Removes clauses with true literals
-    #Removes literals that are false
-    #Returns False if problem is unsolvable, and True otherwise
+    # Removes clauses with true literals
+    # Removes literals that are false
+    # Returns False if problem is unsolvable, and True otherwise
     def Simplify(self):
 
         if(self.Unsolvable):
@@ -169,10 +174,10 @@ class SAT_solver_VSIDS:
                     eq_lits = [x for x in Clause if x.ID == lit.ID and (not x is lit)]
 
                     if(eq_lits):
-                        finished = False;
-                        #~ pdb.set_trace();
+                        finished = False
+                        #~ pdb.set_trace()
 
-                    delete_all_eqs = False;
+                    delete_all_eqs = False
                     for eq_lit in eq_lits:
                         if(eq_lit.Affirm != lit.Affirm):
                             delete_all_eqs = True
@@ -189,7 +194,7 @@ class SAT_solver_VSIDS:
                 return
 
     # Assign all the literals in unit clauses.
-    # Returns True if any units were found or problem was found to be 
+    # Returns True if any units were found or problem was found to be
     # unsolvable and False otherwise
     # If it finds the problem unsolvable, it sets the flag Unsolvable
     def Assign_Units(self):
@@ -270,6 +275,9 @@ class SAT_solver_VSIDS:
 
         self.curr_heur_val = self.curr_heur_val * self.heur_factor
 
+        # Seed the RNG
+        random.seed()
+
         return
 
 
@@ -307,6 +315,17 @@ class SAT_solver_VSIDS:
         if max(self.persistent_heuristic) > 2**512:
             self.persistent_heuristic[:] = [x / 2**256 for x in self.persistent_heuristic]
             self.curr_heur_val = self.INIT_HEUR
+
+        # Occasionally try a random assignment
+        if self.TRY_RANDOM_CHOICE:
+            rnd_no = random.randint(1, 100)
+            if rnd_no < self.RANDOM_CHOICE_LKHD:
+                # Do a random assignment instead
+                rnd_no = random.randint(0, len(self.Assignments) - 1)
+                # Check that the chosen variable is unassigned
+                while self.Assignments[rnd_no] != None:
+                    rnd_no = random.randint(0, len(self.Assignments) - 1)
+                return rnd_no
 
         # Choose the greatest unassigned value
         chosen_lit = 0
@@ -399,4 +418,4 @@ def ass_print(assignments):
     if( ass_L%10 ):
         L+=1
     for i in range(L):
-        print('(%d-%d) - %s'%(i*10+1,min(i*10+10,ass_L),assignments[i*10:min(i*10+10,ass_L)]));
+        print('(%d-%d) - %s'%(i*10+1,min(i*10+10,ass_L),assignments[i*10:min(i*10+10,ass_L)]))
