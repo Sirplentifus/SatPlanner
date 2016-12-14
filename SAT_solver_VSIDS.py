@@ -104,7 +104,6 @@ class SAT_solver_VSIDS:
             new_guess.Assignments_Before = copy.copy(self.Assignments)
 
             # Update heuristic
-            pdb.set_trace();
             chosen_lit = self.Update_Heur()
 
             if(self.DEBUG):
@@ -333,11 +332,11 @@ class SAT_solver_VSIDS:
                 return rnd_no
 
         # Choose the greatest unassigned value
-        unassigned_lits = [i in range(len(self))]
+        unassigned_lits = [i for i in range(self.nvars) if self.Assignments[i] == None]
 
-        chosen_lit = 0
-        max_heur = self.persistent_heuristic[0]
-        for i in range(1, len(self.persistent_heuristic)):
+        chosen_lit = unassigned_lits[0]
+        max_heur = self.persistent_heuristic[chosen_lit]
+        for i in unassigned_lits[1:]:
             if self.persistent_heuristic[i] > max_heur:
                 if self.Assignments[i] == None:
                     max_heur = self.persistent_heuristic[i]
