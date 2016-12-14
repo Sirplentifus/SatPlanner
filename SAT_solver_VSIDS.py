@@ -4,7 +4,7 @@ import pdb
 import random
 
 
-class SAT_solver_VSIDS:
+class SAT_solver:
     def __init__(self, CNF_SAT_Problem):
         self.CNF_SAT_Problem = CNF_SAT_Problem
 

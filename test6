@@ -1,0 +1,37 @@
+Testing problem trivial1.dat
+
+Initial encoding time: 0.0
+
+Problem solved:
+Solution:
+do A 
+
+Solution time: 0.0
+
+Testing problem EasyPeasy.dat
+
+Initial encoding time: 0.0
+
+Problem solved:
+Solution:
+setonfire B 
+setonfire A 
+
+Solution time: 0.0
+
+Testing problem path.dat
+
+Initial encoding time: 0.1
+
+Problem solved:
+Solution:
+move A B 
+move B C 
+move C D 
+
+Solution time: 0.5
+
+Testing problem iter1.dat
+
+Initial encoding time: 77.5
+

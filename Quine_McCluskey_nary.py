@@ -1,6 +1,7 @@
 #Inspired by the Quine McCluskey algorithm, as implemented in 
 #http://stackoverflow.com/a/11454049/1577940, but generalized to work
-#n-ary variables, instead of just binary (or boolean) ones.
+#n-ary variables, instead of just binary (or boolean) ones. Very little,
+#if any, of his original code remains.
 
 import copy;
 import pdb;

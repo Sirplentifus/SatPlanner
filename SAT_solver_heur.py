@@ -3,7 +3,7 @@ import copy
 import pdb
 
 
-class SAT_solver_heur:
+class SAT_solver:
     def __init__(self, CNF_SAT_Problem):
         self.CNF_SAT_Problem = CNF_SAT_Problem
         #learned_clauses keeps track of the learned clauses

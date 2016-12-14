@@ -1,58 +1,54 @@
-from encode import *;
+import sys;
+
+from encoder import *;
 from SAT_defs import *
 
 import pdb;
 
-DEBUG = True;
-Heuristics = True;
+from SAT_solver_VSIDS import *; #Choose between SAT_solver_VSIDS, SAT_solver_heur, or SAT_solver. SAT_solver_VSIDS is the fastest solver we've made
 
-if(Heuristics):
-    from SAT_solver_VSIDS import *;
-else:
-    from SAT_solver import *;
-    
+DEBUG = True; #If true, produces certain output to stdout and to files in folder Dump (must exist)    
 
 fh = open(sys.argv[1],'r');    
+#Initializing the problem (Reads the file fh, and prepares the encoding)
 ThisProblem = problem(fh);
 
 if(DEBUG):
+    #Prints the data gathered by problem.
     print(ThisProblem);
     
+    #Prints to file the statements. Useful in debugging and to find possible improvements
     SAT_save(ThisProblem.Init_Statement, './Dump/Init_Statement.dat');
     SAT_save(ThisProblem.Goal_Statement, './Dump/Goal_Statement.dat');
     SAT_save(ThisProblem.Actions_Statement, './Dump/Actions_Statement.dat');
     SAT_save(ThisProblem.Frame_Statement, './Dump/Frame_Statement.dat');
     SAT_save(ThisProblem.Exclusive_Statement, './Dump/Exclusive_Statement.dat');
     
-    exit;
 
+#In this loop we iteratively increase the horizon until a solution to the
+#problem is found, or the horizon exceeds a certain value, after which
+#We give up and consider the problem unsolvable.
 Solved = False;
-horz = 1;
-while(horz<=7):
-    print('Now trying h=%d'%horz);
+for horz in range(1,15):
+    if(DEBUG):
+        print('Now trying h=%d'%horz);
     ThisProblem.set_horizon(horz);
-    if(Heuristics):
-        Solver = SAT_solver_VSIDS(ThisProblem.Total_Statement);
-    else:
-        Solver = SAT_solver(ThisProblem.Total_Statement);
+
+    Solver = SAT_solver(ThisProblem.Total_Statement);
+    
     if(Solver.Solve()):
         Solved = True;
         break;
-    else:
-        horz+=1;
 
 if(DEBUG):
     SAT_save(ThisProblem.Total_Statement, './Dump/SAT.dat');
+    print('');
     
     
-    
-
-
-
 if(Solved):
-    print('Problem solved:');
-    print ('Solution:\n%s'%ThisProblem.decode_assignment(Solver.Assignments));
+    #Decoding the assignments into the requested output format
+    print (ThisProblem.decode_assignment(Solver.Assignments));
 else:
-    print('Problem is unsolvable');
+    print('Could not solve the problem');
 
 
