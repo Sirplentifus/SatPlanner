@@ -76,12 +76,11 @@ class SAT_solver:
                     print(self.CNF_SAT_Problem)
                 if 'a' in x:
                     ass_print(self.Assignments)
-                # if('c' in x):
-                #    self.DEBUG = False;
+                if('c' in x):
+                    self.DEBUG = False
                 if 'n' in x:
                     self.ASK = False
-                # if('d' in x):
-                if 'c' in x:
+                if('d' in x):
                     pdb.set_trace()
 
             if not self.CNF_SAT_Problem.Clauses:
@@ -109,6 +108,8 @@ class SAT_solver:
             if(self.DEBUG):
                 print('Heuristic: %s'%[h for h in self.persistent_heuristic])
 
+            # We try false first
+            # It has been the best option, empirically
             if (self.Assignments[chosen_lit] == None):
                 new_guess.Lit_ID = chosen_lit
                 new_guess.Tried[False] = True
@@ -117,15 +118,6 @@ class SAT_solver:
             else:
                 # This really shouldn't happen
                 raise(ValueError("Tried to assign to already-assigned literal!"))
-
-
-            # Find the first unassigned
-            #for i in range(self.CNF_SAT_Problem.N_Vars):
-                # if(self.Assignments[i] == None):
-                    # new_guess.Lit_ID = i;
-                    # new_guess.Tried[False] = True;
-                    # self.Assignments[i] = False;
-                    # break;
 
             self.Guesses.append(new_guess)
             if(self.DEBUG):
@@ -144,27 +136,35 @@ class SAT_solver:
         for Clause in self.CNF_SAT_Problem.Clauses:
             rem_lits = []
             for lit in Clause:
+                # Unassigned can't be simplified
                 if(self.Assignments[lit.ID] == None):
                     continue
+
+                # Mark clauses that have been satisfied for removal
                 if(lit.Affirm == self.Assignments[lit.ID]):
                     rem_clauses.append(Clause)
                     rem_lits = []
                     break
+
+                # Mark false literals for removal
+                # Empty clauses mean UNSAT
                 if(lit.Affirm != self.Assignments[lit.ID]):
                     rem_lits.append(lit)
+
+            # Literal removal
             for rem_lit in rem_lits:
                 Clause.remove(rem_lit)
             if(not Clause):
                 return False
 
+        # Clause removal
         for rem_clause in rem_clauses:
             self.CNF_SAT_Problem.Clauses.remove(rem_clause)
         return True
 
     # Removes contradicting literals in a clause
     # Removes repeating literals in a clause
-    # Returns True if problem was found to be impossible, and False otherwise
-    # Only needs to be ran once
+    # Only needs to be run once
     # Of all the times it was used, it did nothing, however it is kept
     # because it guarantees that each clause only has one of each kind
     # of literals
@@ -207,13 +207,21 @@ class SAT_solver:
             if(len(Clause) == 1):
                 ret = True
                 unit_lit = Clause[0]
+
+                # If previous assignments contradict the current
+                # inference, mark the problem as unsolvable so
+                # that we can backtrack.
                 if(self.Assignments[unit_lit.ID] == (not unit_lit.Affirm)):  # WARNING: not None evaluates to True
                     self.Unsolvable = True
                     return True
                 self.Assignments[unit_lit.ID] = unit_lit.Affirm
                 Clauses_to_Remove.append(Clause)
+
+        # Debug print
         if(self.DEBUG and bool(Clauses_to_Remove)):
             print('Unit clauses found: %s'%Clauses_to_Remove)
+
+        # Actually remove clauses
         for Clause_to_Remove in Clauses_to_Remove:
             self.CNF_SAT_Problem.Clauses.remove(Clause_to_Remove)
         return ret
@@ -275,6 +283,7 @@ class SAT_solver:
             for lit in clause:
                 self.persistent_heuristic[lit.ID] += self.curr_heur_val
 
+        # Update the next bump value
         self.curr_heur_val = self.curr_heur_val * self.heur_factor
 
         # Seed the RNG
@@ -305,12 +314,13 @@ class SAT_solver:
         for clause in self.learned_clause:
             for lit in clause:
                 self.persistent_heuristic[lit.ID] += self.curr_heur_val
-
+        
+        # Remove the learned clause now that it's been accounted for
+        # Don't try this on an empty list...
         if self.learned_clause:
-            # Remove the learned clause now that it's been accounted for
-            # Don't try this on an empty list...
             self.learned_clause.pop()
 
+        # Update the next bump value
         self.curr_heur_val = self.curr_heur_val * self.heur_factor
 
         # Keep things representable by doubles
@@ -331,7 +341,6 @@ class SAT_solver:
 
         # Choose the greatest unassigned value
         unassigned_lits = [i for i in range(self.nvars) if self.Assignments[i] == None]
-
         chosen_lit = unassigned_lits[0]
         max_heur = self.persistent_heuristic[chosen_lit]
         for i in unassigned_lits[1:]:
@@ -345,10 +354,11 @@ class SAT_solver:
     
     # Backs up until the last guess that still has an untried option
     #
-    # Returns false if no guesses were made (problem is UNSAT
-    # #)
+    # Returns false if no guesses were made (problem is UNSAT)
     def BackTrack(self):
         # Start by learning the conflict clause
+
+        # Limited-length learning
         if self.LIMIT_LEARN_CLAUSE_LEN:
             if len(self.Assignments) < self.MAX_LEARN_CLAUSE_LEN:
                 new_clause = []
@@ -356,6 +366,7 @@ class SAT_solver:
                     lit_val = self.Assignments[i.Lit_ID]
                     lit_i = Literal(i.Lit_ID, lit_val)
                     new_clause.append(lit_i)
+        # Learn everything, regardless of size
         else:
             new_clause = []
             for i in self.Guesses:
@@ -375,6 +386,7 @@ class SAT_solver:
             if(Untried):
                 Untried = Untried[0]
                 this_Guess.Tried[Untried] = True
+                # Return to the old assignments state
                 self.Assignments = this_Guess.Assignments_Before
                 self.Assignments[this_Guess.Lit_ID] = bool(Untried)
                 self.CNF_SAT_Problem = this_Guess.Sentence_Before
@@ -384,9 +396,6 @@ class SAT_solver:
                     print('Guesses list: %s'%self.Guesses)
                     print('Complexity of recovered state: %d'%complexity(self.CNF_SAT_Problem))
                 return True
-            #~ else:
-                #~ self.Assignments[this_Guess.Lit_ID] = None;
-                #~ continue;
 
         return False
 
