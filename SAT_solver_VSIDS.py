@@ -100,6 +100,7 @@ class SAT_solver_VSIDS:
             new_guess.Assignments_Before = copy.copy(self.Assignments)
 
             # Update heuristic
+            pdb.set_trace();
             chosen_lit = self.Update_Heur()
 
             if(self.DEBUG):

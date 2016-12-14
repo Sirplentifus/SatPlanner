@@ -2,11 +2,11 @@ from encode import *;
 
 import pdb;
 
-DEBUG = False;
+DEBUG = True;
 Heuristics = True;
 
 if(Heuristics):
-    from SAT_solver_heur import *;
+    from SAT_solver_VSIDS import *;
 else:
     from SAT_solver import *;
     
@@ -22,6 +22,8 @@ if(DEBUG):
     SAT_save(ThisProblem.Actions_Statement, './Dump/Actions_Statement.dat');
     SAT_save(ThisProblem.Frame_Statement, './Dump/Frame_Statement.dat');
     SAT_save(ThisProblem.Exclusive_Statement, './Dump/Exclusive_Statement.dat');
+    
+    exit;
 
 Solved = False;
 horz = 1;
@@ -29,7 +31,7 @@ while(horz<=7):
     print('Now trying h=%d'%horz);
     ThisProblem.set_horizon(horz);
     if(Heuristics):
-        Solver = SAT_solver_heur(ThisProblem.Total_Statement);
+        Solver = SAT_solver_VSIDS(ThisProblem.Total_Statement);
     else:
         Solver = SAT_solver(ThisProblem.Total_Statement);
     if(Solver.Solve()):

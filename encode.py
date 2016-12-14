@@ -306,7 +306,14 @@ class problem:
                     self.Actions_Statement.Clauses.append( Base_Clause + [precond_lit]);
                 
                 #At the beggining, actions_with_no_effect contains every single action, for a change to false or to true
-                actions_with_no_effect = [QM([self.N_acts] + [self.N_vars]*self.N_args), QM([self.N_acts] + [self.N_vars]*self.N_args)]; #Can't use *2 as that would make them both the same
+                actions_with_no_effect_per_act = [[],[]];
+                for act_name in self.Actions:
+                    act = self.Actions[act_name];
+                    actions_with_no_effect_per_act[False].append( QM([self.N_vars]*act.Num_of_args) );
+                    actions_with_no_effect_per_act[True].append( QM([self.N_vars]*act.Num_of_args) );
+                #~ actions_with_no_effect = [QM([self.N_acts] + [self.N_vars]*self.N_args), QM([self.N_acts] + [self.N_vars]*self.N_args)]; #Can't use *2 as that would make them both the same
+                
+                
                 
                 #Create action implies effect clauses, and remove from actions_with_no_effect those actions that do have an effect
                 for effect in acts_effects:
@@ -314,11 +321,19 @@ class problem:
                     Base_Clause = self.Act2Clause(effect);
                     self.Actions_Statement.Clauses.append( Base_Clause + [effect_lit]);
                     
-                    act_that_does_effect = [Base_Clause[0].ID - self.N_rels];
+                    #~ act_that_does_effect = [Base_Clause[0].ID - self.N_rels];
+                    act_that_does_effect = [];
                     for arg in effect.Variables:
                         act_that_does_effect.append(arg);
                     
-                    actions_with_no_effect[effect.affirm].remove([act_that_does_effect]);
+                    actions_with_no_effect_per_act[effect.affirm][Base_Clause[0].ID - self.N_rels].remove([act_that_does_effect]);
+                    
+                actions_with_no_effect = [QM([self.N_acts] + [self.N_vars]*self.N_args, {}), QM([self.N_acts] + [self.N_vars]*self.N_args, {})];
+                
+                #~ pdb.set_trace();
+                
+                for affirm_state in [False,True]:
+                    actions_with_no_effect[affirm_state].join(actions_with_no_effect_per_act[affirm_state]);
                 
                 for affirm_state in [False,True]:
                     actions_with_no_effect[affirm_state].simplify();

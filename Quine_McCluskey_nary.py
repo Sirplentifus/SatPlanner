@@ -18,11 +18,15 @@ class QM:
             self.expand(); 
         else:
             for Clause in Clauses:
+                
+                Clause = list(Clause);
+                
                 if(len(Clause) > len(Arities)):
                     raise(ValueError('Too many elements in a clause'));
                 
                 #Extending the clauses until they have the valid length
                 for i in range(len(Clause), len(Arities)):
+                    raise(ValueError);
                     Clause.append(-1);
                 Clause = tuple(Clause);
                     
@@ -68,6 +72,29 @@ class QM:
         aux = QM(self.Arities, Clauses);
         aux.expand();
         self.Clauses.difference_update(aux.Clauses);
+    
+    def join(self, QM_list):
+        j = 0;
+        for QM_object in QM_list:
+            
+            QM_object.simplify();
+            
+            for Clause in QM_object.Clauses:
+                
+                Clause = [j] + list(Clause);
+                
+                if(len(Clause) > len(self.Arities)):
+                    raise(ValueError('Too many elements in a clause'));
+                
+                #Extending the clauses until they have the valid length
+                for i in range(len(Clause), len(self.Arities)):
+                    Clause.append(-1);
+                Clause = tuple(Clause);
+                    
+                self.Clauses.add(Clause);
+                
+            j+=1;
+        
         
     #~ def add(self, Clauses): #Clauses must be a list of tuples
         #~ aux = QM(self.Arities, Clauses);
@@ -98,12 +125,22 @@ class QM:
         
     def simplify(self):
         
-        Clauses_by_grouping = [self.Clauses]; #List of sets
+        #~ pdb.set_trace();
         
-        while( Clauses_by_grouping[-1] ):
+        Clauses_by_grouping = [set() for i in range(len(self.Arities)+1)]; #List of sets
+        
+        for Clause in self.Clauses:
+            Clause_grouping = len([i for i in Clause if i==-1]);
+            Clauses_by_grouping[Clause_grouping].add(Clause);
+        
+        self.Clauses = set();
+        
+        grouping = 0;
+        
+        while( Clauses_by_grouping[grouping] and grouping <  len(self.Arities) ):
             
-            Clauses_by_grouping.append(set());
-            Clauses_temp = list(Clauses_by_grouping[-2]); #The one we're working on
+            #~ Clauses_by_grouping.append(set());
+            Clauses_temp = list(Clauses_by_grouping[grouping]); #The one we're working on
             N_clauses = len(Clauses_temp);
             
             for i in range(N_clauses-1):
@@ -120,13 +157,14 @@ class QM:
                 for j in range(len(self.Arities)):
                     if(len(Similars[j]) == self.Arities[j]-1 and self.Arities[j]!=1): #Unary variables can lead to repeatedly combining one variable, making this program never end
                         
-                        Clauses_by_grouping[-2].difference_update( [ Clauses_temp[n] for n in (Similars[j]+[i]) ] );
+                        Clauses_by_grouping[grouping].difference_update( [ Clauses_temp[n] for n in (Similars[j]+[i]) ] );
                         
                         To_Add = list(Clauses_temp[i]);
                         To_Add[j] = -1;
-                        Clauses_by_grouping[-1].add(tuple(To_Add));
-                
-        for cause_group in Clauses_by_grouping[1:]:
+                        Clauses_by_grouping[grouping+1].add(tuple(To_Add));
+            grouping += 1;
+        
+        for cause_group in Clauses_by_grouping:
             self.Clauses.update(cause_group);
         
 
